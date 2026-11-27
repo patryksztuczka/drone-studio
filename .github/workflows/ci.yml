@@ -98,6 +98,17 @@ jobs:
       - name: Test (cargo test)
         run: cargo test --workspace
 
+      - name: no_std crates build for the flight controller target
+        run: cargo build -p flight-config -p flight-core -p drone-protocol --no-default-features --target thumbv7em-none-eabihf
+
+      - name: Hardware manifests validate and generated files are fresh
+        run: |
+          cargo run -q -p drone-cli -- validate
+          cargo run -q -p drone-cli -- codegen --check
+
+      - name: Regression suite in SITL
+        run: cargo run -q --release -p drone-cli -- sim suite --no-record
+
   typecheck:
     name: Typecheck
     needs: static
