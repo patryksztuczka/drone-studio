@@ -41,6 +41,38 @@ impl RunOutput {
     }
 }
 
+pub fn finish(
+    mut session: Session,
+    scenario: &Scenario,
+    params: std::collections::BTreeMap<String, f64>,
+    wall_time_s: f64,
+) -> RunOutput {
+    let mut events = std::mem::take(&mut session.events);
+    let samples = std::mem::take(&mut session.samples);
+    let assertions = assertions::evaluate(scenario, &samples, &events);
+    for r in assertions.iter().filter(|r| !r.passed) {
+        events.push(Event::new(
+            r.t_fail.unwrap_or(scenario.duration_s),
+            "ASSERT_FAIL",
+            json!({ "assertion": r.kind, "message": r.message }),
+        ));
+    }
+    events.sort_by(|a, b| a.t.total_cmp(&b.t));
+    RunOutput {
+        scenario: scenario.clone(),
+        model: session.simulator().model().clone(),
+        seed: session.seed,
+        params,
+        passed: assertions.iter().all(|r| r.passed),
+        assertions,
+        samples,
+        events,
+        sim_time_s: session.time_s(),
+        wall_time_s,
+        bytes_on_wire: 0,
+    }
+}
+
 pub fn run(
     model: &AirframeModel,
     scenario: &Scenario,
@@ -60,33 +92,18 @@ pub fn run(
     for _ in 0..ticks {
         session.step()?;
     }
-    let wall = started.elapsed().as_secs_f64();
-    let mut events = std::mem::take(&mut session.events);
-    let samples = std::mem::take(&mut session.samples);
-    let assertions = assertions::evaluate(scenario, &samples, &events);
-    for r in assertions.iter().filter(|r| !r.passed) {
-        events.push(Event::new(
-            r.t_fail.unwrap_or(scenario.duration_s),
-            "ASSERT_FAIL",
-            json!({ "assertion": r.kind, "message": r.message }),
-        ));
-    }
-    events.sort_by(|a, b| a.t.total_cmp(&b.t));
     let mut params = scenario.params.clone();
     params.extend(opts.params.clone());
-    Ok(RunOutput {
-        scenario: scenario.clone(),
-        model: model.clone(),
-        seed: session.seed,
+    Ok(finish(
+        session,
+        scenario,
         params,
-        passed: assertions.iter().all(|r| r.passed),
-        assertions,
-        samples,
-        events,
-        sim_time_s: session.time_s(),
-        wall_time_s: wall,
-        bytes_on_wire: 0,
-    })
+        started.elapsed().as_secs_f64(),
+    ))
+}
+
+pub fn param_names() -> &'static [&'static str] {
+    flight_core::PARAM_NAMES
 }
 
 pub type ThreadPool = rayon::ThreadPool;
