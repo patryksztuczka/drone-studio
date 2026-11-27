@@ -1,3 +1,3 @@
-export { RunsModule } from "./components/runs-module.tsx";
+export { RunsFeed } from "./components/runs-feed.tsx";
 
-export { latestRunFailed } from "./run-labels.ts";
+export { unseenAgentRun } from "./run-labels.ts";

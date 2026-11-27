@@ -3,7 +3,7 @@ import type { LayoutPad } from "@drone-studio/engine-client";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  busChips,
+  busDetail,
   frequencyLabel,
   highlightFor,
   padEdge,
@@ -66,11 +66,7 @@ const board: BoardParts = {
       size_mm: [3, 2.5],
     },
   ],
-  pads: [motorPad, rxPad, groundPad, pad("gnd2", "power", "GND"), pad("bat_p", "power", "VBAT")],
-  analog: {
-    vbat: { adc: "adc1", channel: 10, pin: "PC0" },
-    current: { adc: "adc1", channel: 11, pin: "PC1" },
-  },
+  pads: [motorPad, rxPad, groundPad, pad("gnd2", "power", "GND")],
 };
 
 describe("board geometry", () => {
@@ -102,12 +98,20 @@ describe("board geometry", () => {
     expect(frequencyLabel(400_000)).toBe("400 kHz");
   });
 
-  it("offers one chip per bus and one for the battery ADC, which lights the pack pad", () => {
-    const chips = busChips(board);
-
-    expect(chips.map((chip) => chip.label)).toEqual(["USART1", "SPI1", "ADC1"]);
-    expect(chips[1]?.detail).toBe("SPI1 24 MHz · SCK PA5");
-    expect(chips[2]?.detail).toBe("ADC1 · VBAT ch10 PC0 · current ch11 PC1");
-    expect([...highlightFor(board, { kind: "analog", id: "adc1" }).pads]).toEqual(["bat_p"]);
+  it("describes a bus with its clock and pins, clock line first", () => {
+    expect(
+      busDetail({
+        id: id("spi1"),
+        kind: "spi",
+        peripheral: "spi1",
+        frequency_hz: 24_000_000,
+        devices: [],
+        pins: [
+          { pin: "PA6", role: "miso" },
+          { pin: "PD7", role: "mosi" },
+          { pin: "PA5", role: "sck" },
+        ],
+      }),
+    ).toBe("SPI1 · 24 MHz · SCK PA5 · MISO PA6 · MOSI PD7");
   });
 });
