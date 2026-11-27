@@ -1,1 +1,3 @@
-export { RunsFeed } from "./components/runs-feed.tsx";
+export { RunsModule } from "./components/runs-module.tsx";
+
+export { latestRunFailed } from "./run-labels.ts";
