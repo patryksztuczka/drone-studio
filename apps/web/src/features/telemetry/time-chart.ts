@@ -24,40 +24,25 @@ export interface ChartSpec {
   readonly axes: ReadonlyArray<AxisSpec>;
 }
 
-const FONT = '10px "Geist Mono Variable", ui-monospace, monospace';
-
-const GRID = "#efefef";
-
 const AXIS_SIDES = { bottom: 2, left: 3, right: 1 } as const;
 
-const AXIS = "#9a9a9a";
-
-export const chartAxis = (
-  side: "left" | "right" | "bottom",
-  scale: string,
-  unit: string,
-): uPlot.Axis => ({
+export const chartAxis = (side: "left" | "right" | "bottom", scale: string): uPlot.Axis => ({
   scale,
   side: AXIS_SIDES[side],
-  stroke: AXIS,
-  font: FONT,
-  size: side === "bottom" ? 22 : 40,
-  gap: 3,
-  ticks: { show: false },
-  grid: { show: side !== "right", stroke: GRID, width: 1 },
-  values: (_chart, ticks) => ticks.map((tick) => `${String(Number(tick.toFixed(2)))}${unit}`),
+  show: false,
+  size: 0,
 });
 
 export const line = (series: SeriesSpec, fallbackScale: string): uPlot.Series => {
   const plain: uPlot.Series = {
     label: series.label,
     stroke: series.color,
-    width: 1.3,
+    width: 1.4,
     scale: series.scale ?? fallbackScale,
     points: { show: false },
   };
 
-  return series.dashed === true ? { ...plain, dash: [4, 3] } : plain;
+  return series.dashed === true ? { ...plain, dash: [3, 3], width: 1 } : plain;
 };
 
 export class TimeChart {
@@ -83,6 +68,7 @@ export class TimeChart {
         width,
         height,
         legend: { show: false },
+        padding: [4, 0, 4, 0],
         cursor: {
           sync: { key: "studio-telemetry" },
           points: { size: 5 },
@@ -91,8 +77,8 @@ export class TimeChart {
         scales,
         series: [{}, ...spec.series.map((series) => line(series, spec.axes[0]?.scale ?? "y"))],
         axes: [
-          chartAxis("bottom", "x", "s"),
-          ...spec.axes.map((axis) => chartAxis(axis.side, axis.scale, axis.unit)),
+          chartAxis("bottom", "x"),
+          ...spec.axes.map((axis) => chartAxis(axis.side, axis.scale)),
         ],
         hooks: {
           draw: [
@@ -103,8 +89,8 @@ export class TimeChart {
               const context = chart.ctx;
 
               context.save();
-              context.strokeStyle = "#0a6cff";
-              context.lineWidth = 1.5 * devicePixelRatio;
+              context.strokeStyle = "#0a6cff80";
+              context.lineWidth = devicePixelRatio;
               context.beginPath();
               context.moveTo(x, chart.bbox.top);
               context.lineTo(x, chart.bbox.top + chart.bbox.height);

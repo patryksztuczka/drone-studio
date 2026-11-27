@@ -4,7 +4,7 @@ import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import { Option, Schema } from "effect";
 import { useContext, useEffect, useRef } from "react";
 
-import { eventTone } from "../../../shared/event-style.ts";
+import { eventColor, eventTone } from "../../../shared/event-style.ts";
 import { fixed } from "../../../shared/format.ts";
 import { activeFlight, playhead } from "../../../shared/studio.atoms.ts";
 import { latestEventIndex } from "../timeline-math.ts";
@@ -26,7 +26,13 @@ const LEVEL_CLASSES: ReadonlyMap<string, string> = new Map([
 const levelOf = (event: FlightEvent) =>
   Option.getOrElse(
     Option.flatMap(decodeEventData(event.data), (data) => Option.fromUndefinedOr(data.level)),
-    () => (eventTone(event.kind) === "danger" ? "error" : "info"),
+    () => {
+      const tone = eventTone(event.kind);
+
+      if (tone === "danger") return "error";
+
+      return tone === "warn" ? "warn" : "info";
+    },
   );
 
 const detailOf = (event: FlightEvent) =>
@@ -56,36 +62,58 @@ export const FirmwareLog = () => {
   }, [latest]);
 
   return (
-    <ol
-      ref={list}
-      aria-label="Firmware log"
-      className="min-h-0 flex-1 overflow-y-auto font-label text-[11px] leading-[14px]"
-    >
-      {events.length === 0 ? <li className="py-1 text-faint">No events yet.</li> : null}
-      {events.map((event, index) => {
-        const level = levelOf(event);
+    <section aria-label="Firmware log" className="flex h-[175px] flex-col px-5 py-4">
+      <header className="flex justify-between pb-2 font-label text-[11px] leading-[14px]">
+        <h2 className="font-normal text-ink-soft">FIRMWARE LOG</h2>
+        <span className="text-faint tabular-nums">
+          {String(latest + 1)}/{String(events.length)}
+        </span>
+      </header>
+      <ol ref={list} className="-mx-1.5 min-h-0 flex-1 overflow-y-auto">
+        {events.length === 0 ? (
+          <li className="px-1.5 text-[13px] leading-4 text-muted">No events yet.</li>
+        ) : null}
+        {events.map((event, index) => {
+          const level = levelOf(event);
+          const current = index === latest;
+          const color = eventColor(event.kind);
 
-        return (
-          <li key={`${String(event.t)}-${event.kind}-${String(index)}`} data-index={index}>
-            <button
-              type="button"
-              onClick={() => seekTo(registry, event.t)}
-              className={cn(
-                "flex w-full cursor-pointer items-baseline gap-2 px-1 py-[3px] text-left hover:bg-background",
-                index === latest ? "bg-blue-soft" : undefined,
-                index > latest ? "opacity-40" : undefined,
-              )}
-            >
-              <span className="w-12 shrink-0 text-faint tabular-nums">{fixed(event.t, 3)}</span>
-              <span className={cn("w-9 shrink-0", LEVEL_CLASSES.get(level) ?? "text-faint")}>
-                {level}
-              </span>
-              <span className="shrink-0 text-ink">{event.kind}</span>
-              <span className="truncate text-muted">{detailOf(event)}</span>
-            </button>
-          </li>
-        );
-      })}
-    </ol>
+          return (
+            <li key={`${String(event.t)}-${event.kind}-${String(index)}`} data-index={index}>
+              <button
+                type="button"
+                onClick={() => seekTo(registry, event.t)}
+                className={cn(
+                  "flex w-full cursor-pointer items-baseline gap-2.5 px-1.5 py-[3px] text-left font-label hover:bg-background",
+                  current ? "bg-blue-soft hover:bg-blue-soft" : undefined,
+                  index > latest ? "opacity-35" : undefined,
+                )}
+              >
+                <span
+                  className={cn(
+                    "w-11 shrink-0 text-[11px] leading-[14px] tabular-nums",
+                    current ? "text-ink" : "text-faint",
+                  )}
+                >
+                  {fixed(event.t, 3)}
+                </span>
+                <span
+                  className={cn(
+                    "w-9 shrink-0 text-[10px] leading-3",
+                    LEVEL_CLASSES.get(level) ?? "text-faint",
+                  )}
+                >
+                  {level}
+                </span>
+                <span className="min-w-0 truncate text-[11px] leading-[14px]" style={{ color }}>
+                  {event.kind}
+                  <span className="text-faint"> {detailOf(event)}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 };

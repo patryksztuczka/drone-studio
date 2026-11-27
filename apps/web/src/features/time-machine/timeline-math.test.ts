@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   advancePlayback,
+  anomalyBands,
   fractionOf,
   labelledMarkers,
   latestEventIndex,
@@ -102,6 +103,30 @@ describe("mergeBands", () => {
       "SATURATION@2",
       "GUST_START@3",
       "GUST_START@6",
+    ]);
+  });
+});
+
+describe("anomalyBands", () => {
+  it("joins repeated anomalies of one kind into one band", () => {
+    const anomaly = (kind: string, start: number, end: number) => ({
+      kind,
+      channel: "motor_1",
+      detail: "",
+      severity: "warn",
+      t_start: start,
+      t_end: end,
+    });
+
+    expect(
+      anomalyBands([
+        anomaly("saturation", 1, 1.5),
+        anomaly("saturation", 1.8, 3),
+        anomaly("voltage_drop", 2, 2.5),
+      ]),
+    ).toEqual([
+      { kind: "saturation", start: 1, end: 3 },
+      { kind: "voltage_drop", start: 2, end: 2.5 },
     ]);
   });
 });

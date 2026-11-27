@@ -117,7 +117,13 @@ export const mergeBands = (bands: ReadonlyArray<Band>): ReadonlyArray<Band> => {
 };
 
 export const anomalyBands = (anomalies: ReadonlyArray<Anomaly>): ReadonlyArray<Band> =>
-  anomalies.map((anomaly) => ({ kind: anomaly.kind, start: anomaly.t_start, end: anomaly.t_end }));
+  mergeBands(
+    anomalies.map((anomaly) => ({
+      kind: anomaly.kind,
+      start: anomaly.t_start,
+      end: anomaly.t_end,
+    })),
+  );
 
 export interface Advance {
   readonly t: number;

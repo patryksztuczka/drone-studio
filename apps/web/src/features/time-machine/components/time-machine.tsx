@@ -1,23 +1,22 @@
-import { PillButton } from "@drone-studio/ui/components/pill";
 import { cn } from "@drone-studio/ui/lib/utils";
-import { RegistryContext, useAtom, useAtomValue } from "@effect/atom-react";
+import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
 
-import { eventLabel, eventPillTone } from "../../../shared/event-style.ts";
+import { eventColor, eventLabel } from "../../../shared/event-style.ts";
 import { clock, fixed } from "../../../shared/format.ts";
+import { PauseIcon, PlayIcon, ResetIcon } from "../../../shared/icons.tsx";
+import { PALETTE } from "../../../shared/palette.ts";
 import {
   activeFlight,
   activeRunLoading,
   followLive,
   ghostFlight,
   playhead,
-  telemetryOpen,
 } from "../../../shared/studio.atoms.ts";
 import type { FlightView } from "../../../shared/studio.atoms.ts";
-import { SPEEDS, useTransport } from "../../../shared/transport.ts";
-import type { Transport } from "../../../shared/transport.ts";
+import { useTransport } from "../../../shared/transport.ts";
 import {
   anomalyBands,
   fractionOf,
@@ -32,21 +31,21 @@ import type { Span } from "../timeline-math.ts";
 import { plotY, seriesPath, valueRange } from "../timeline-plot.ts";
 import { seekTo } from "./use-playback.ts";
 
+const HEIGHT = 141;
+
+const TOP = 22;
+
+const BOTTOM = 118;
+
 const PLOTTED = "height";
 
-const HEIGHT = 114;
-
-const AXIS_Y = 92;
-
-const BOX = { top: 26, bottom: 88 } as const;
-
 const BAND_FILLS: ReadonlyMap<string, string> = new Map([
-  ["GUST_START", "#0a6cff0d"],
-  ["SATURATION", "#e5484d0a"],
-  ["FAULT", "#e5484d0a"],
+  ["GUST_START", "#38a3e81a"],
+  ["SATURATION", "#e58a0024"],
+  ["FAULT", "#d6409f1a"],
 ]);
 
-export const spanOf = (flight: FlightView): Span => ({
+const spanOf = (flight: FlightView): Span => ({
   start: Math.min(flight.table.startTime, 0),
   end: flight.live
     ? liveSpanEnd(flight.table.endTime, flight.status?.duration_s ?? flight.table.endTime)
@@ -74,6 +73,9 @@ const useTrackWidth = () => {
   return { element, width };
 };
 
+const tickLabel = (tick: number) =>
+  tick >= 60 ? clock(tick).slice(0, 5) : `${fixed(tick, tick % 1 === 0 ? 0 : 1)}s`;
+
 interface TrackProps {
   readonly flight: FlightView;
   readonly ghost: Option.Option<FlightView>;
@@ -84,43 +86,44 @@ const Track = ({ flight, ghost, t }: TrackProps) => {
   const registry = useContext(RegistryContext);
   const { element, width } = useTrackWidth();
   const span = spanOf(flight);
-  const box = { ...BOX, width };
+  const x = (time: number) => fractionOf(time, span) * width;
 
   const markers = useMemo(
     () => timelineMarkers(flight.events, flight.table.endTime),
     [flight.events, flight.table.endTime],
   );
 
-  const tables = Option.match(ghost, {
-    onNone: () => [flight.table],
-    onSome: (other) => [flight.table, other.table],
-  });
-
   const anomalies = useMemo(() => anomalyBands(flight.anomalies), [flight.anomalies]);
-  const range = valueRange(tables, PLOTTED, span.end);
-  const ticks = rulerTicks(span, width, 80);
-  const head = fractionOf(t, span) * width;
-  const headValue = flight.table.sample(PLOTTED, t);
-  const headY = Number.isFinite(headValue) ? plotY(headValue, range, box) : AXIS_Y;
-  const candidatePath = seriesPath(flight.table, PLOTTED, span, range, box);
 
-  const baselinePath = Option.match(ghost, {
-    onNone: () => "",
-    onSome: (other) => seriesPath(other.table, PLOTTED, span, range, box),
-  });
+  const namedAnomalies = labelledMarkers(
+    anomalies.map((band) => band.start),
+    span,
+    width,
+    150,
+  );
 
-  const baselineEnd = Option.flatMap(ghost, (other) => {
-    const value = other.table.sample(PLOTTED, span.end);
-
-    return Number.isFinite(value) ? Option.some(plotY(value, range, box)) : Option.none();
-  });
+  const ticks = rulerTicks(span, width, 60);
+  const head = x(t);
+  const recorded = x(flight.table.endTime);
 
   const named = labelledMarkers(
     markers.points.map((event) => event.t),
     span,
     width,
-    84,
+    70,
   );
+
+  const box = { width, top: TOP + 8, bottom: BOTTOM - 14 };
+
+  const comparison = Option.map(ghost, (other) => {
+    const range = valueRange([flight.table, other.table], PLOTTED, span.end);
+
+    return {
+      candidate: seriesPath(flight.table, PLOTTED, span, range, box),
+      baseline: seriesPath(other.table, PLOTTED, span, range, box),
+      label: plotY(other.table.sample(PLOTTED, span.end), range, box),
+    };
+  });
 
   const labelled = new Set([
     ticks[0],
@@ -159,7 +162,7 @@ const Track = ({ flight, ghost, t }: TrackProps) => {
       aria-valuemax={span.end}
       aria-valuenow={Number(t.toFixed(2))}
       aria-valuetext={clock(t)}
-      className="relative min-w-0 flex-1 cursor-ew-resize touch-none outline-none select-none focus-visible:ring-2 focus-visible:ring-blue/30"
+      className="relative min-w-0 flex-1 cursor-ew-resize touch-none outline-none select-none"
       style={{ height: HEIGHT }}
       onKeyDown={onKey}
       onPointerDown={(event) => {
@@ -177,117 +180,124 @@ const Track = ({ flight, ghost, t }: TrackProps) => {
         className="absolute inset-0 overflow-visible"
         aria-hidden="true"
       >
-        <path d={`M0 ${String(AXIS_Y)}H${String(width)}`} stroke="#d0d0d0" />
-        {ticks.map((tick) => {
-          const x = fractionOf(tick, span) * width;
-
-          return (
-            <path
-              key={tick}
-              d={`M${x.toFixed(1)} ${String(AXIS_Y)}V${String(AXIS_Y + (labelled.has(tick) ? 6 : 4))}`}
-              stroke="#d0d0d0"
-            />
-          );
-        })}
-        {markers.bands.map((band) => {
-          const x = fractionOf(band.start, span) * width;
-          const right = fractionOf(band.end, span) * width;
-
-          return (
-            <rect
-              key={`${band.kind}-${String(band.start)}`}
-              x={x}
-              y={20}
-              width={Math.max(right - x, 1)}
-              height={AXIS_Y - 20}
-              fill={BAND_FILLS.get(band.kind) ?? "#1111110a"}
-            />
-          );
-        })}
-        {anomalies.map((band) => {
-          const x = fractionOf(band.start, span) * width;
-          const right = fractionOf(band.end, span) * width;
-
-          return (
-            <rect
-              key={`anomaly-${band.kind}-${String(band.start)}`}
-              x={x}
-              y={AXIS_Y - 3}
-              width={Math.max(right - x, 2)}
-              height={3}
-              fill="#e58a00"
-            >
-              <title>{`anomaly: ${band.kind}`}</title>
-            </rect>
-          );
-        })}
-        {baselinePath === "" ? null : (
-          <path d={baselinePath} fill="none" stroke="#9a9a9a" strokeDasharray="4 3" />
-        )}
-        <path
-          d={candidatePath}
-          fill="none"
-          stroke={Option.isSome(ghost) ? "#0a6cff" : "#111111"}
-          strokeWidth={Option.isSome(ghost) ? 1.5 : 1.2}
+        <rect
+          x={0.5}
+          y={TOP}
+          width={Math.max(width - 1, 0)}
+          height={BOTTOM - TOP}
+          fill="#ffffff"
+          stroke={PALETTE.line}
         />
+        <rect x={0} y={TOP} width={recorded} height={BOTTOM - TOP} fill="#0a6cff08" />
+        {markers.bands.map((band) => (
+          <rect
+            key={`${band.kind}-${String(band.start)}`}
+            x={x(band.start)}
+            y={TOP}
+            width={Math.max(x(band.end) - x(band.start), 1)}
+            height={BOTTOM - TOP}
+            fill={BAND_FILLS.get(band.kind) ?? "#1111110a"}
+          />
+        ))}
+        {anomalies.map((band) => (
+          <rect
+            key={`anomaly-${band.kind}-${String(band.start)}`}
+            x={x(band.start)}
+            y={BOTTOM - 6}
+            width={Math.max(x(band.end) - x(band.start), 3)}
+            height={6}
+            fill="#e58a00b3"
+          />
+        ))}
+        {Option.match(comparison, {
+          onNone: () => null,
+          onSome: (paths) => (
+            <>
+              <path d={paths.baseline} fill="none" stroke={PALETTE.ghost} strokeDasharray="4 3" />
+              <path d={paths.candidate} fill="none" stroke={PALETTE.blue} strokeWidth={1.4} />
+            </>
+          ),
+        })}
         {markers.points.map((event, index) => {
-          const x = fractionOf(event.t, span) * width;
+          const at = x(event.t);
+          const color = eventColor(event.kind);
 
           return (
-            <path
-              key={`${event.kind}-${String(event.t)}-${String(index)}`}
-              d={`M${x.toFixed(1)} 22V${String(AXIS_Y)}`}
-              stroke="#11111140"
-              strokeDasharray="2 3"
-            />
+            <g key={`${event.kind}-${String(event.t)}-${String(index)}`}>
+              <path
+                d={`M${at.toFixed(1)} ${String(TOP)}V${String(BOTTOM)}`}
+                stroke={color === PALETTE.ink ? "#11111159" : `${color}99`}
+              />
+              <path
+                d={`M${String(at - 4)} ${String(TOP)}L${String(at)} ${String(TOP - 4)}L${String(at + 4)} ${String(TOP)}L${String(at)} ${String(TOP + 4)}Z`}
+                fill={color}
+              />
+            </g>
           );
         })}
-        <path d={`M${head.toFixed(1)} 6V100`} stroke="#0a6cff" strokeWidth={1.5} />
-        <circle cx={head} cy={headY} r={4} fill="#ffffff" stroke="#0a6cff" strokeWidth={1.5} />
+        {ticks.map((tick) => (
+          <path
+            key={tick}
+            d={`M${x(tick).toFixed(1)} ${String(BOTTOM)}V${String(BOTTOM + (labelled.has(tick) ? 6 : 4))}`}
+            stroke={PALETTE.lineStrong}
+          />
+        ))}
+        <path d={`M${head.toFixed(1)} 8V128`} stroke={PALETTE.blue} strokeWidth={1.5} />
+        <path
+          d={`M${String(head - 6)} 8H${String(head + 6)}L${String(head)} 15Z`}
+          fill={PALETTE.blue}
+        />
       </svg>
       {markers.points.map((event, index) =>
         named[index] === true ? (
-          <PillButton
+          <button
             key={`${event.kind}-${String(event.t)}-${String(index)}`}
-            tone={eventPillTone(event.kind)}
-            size="xs"
+            type="button"
             aria-label={`${event.kind} at ${fixed(event.t, 2)} seconds`}
             title={`${event.kind} at ${fixed(event.t, 2)} s`}
             onPointerDown={(pointer) => pointer.stopPropagation()}
             onClick={() => seekTo(registry, event.t)}
-            className="absolute top-2 -translate-x-1/2"
-            style={{ left: fractionOf(event.t, span) * width }}
+            className="absolute top-[28px] cursor-pointer font-label text-[10px] leading-3 whitespace-nowrap hover:underline"
+            style={{ left: x(event.t) + 6, color: eventColor(event.kind) }}
           >
             {eventLabel(event.kind)}
-          </PillButton>
+          </button>
         ) : null,
       )}
-      <span
-        className="pointer-events-none absolute -top-2 -translate-x-1/2 rounded-full bg-blue px-[7px] py-0.5 font-label text-[11px] leading-[14px] text-white tabular-nums"
-        style={{ left: head }}
-      >
-        {fixed(t, 2)}
-      </span>
-      {Option.isNone(baselineEnd) ? null : (
-        <span
-          className="pointer-events-none absolute right-6 font-label text-[11px] leading-[14px] text-faint"
-          style={{ top: Math.min(baselineEnd.value + 4, AXIS_Y - 16) }}
-        >
-          base
-        </span>
+      {anomalies.map((band, index) =>
+        namedAnomalies[index] === true ? (
+          <span
+            key={`anomaly-label-${band.kind}-${String(band.start)}`}
+            className="pointer-events-none absolute top-[96px] font-label text-[9px] leading-3 whitespace-nowrap text-amber"
+            style={{ left: x(band.start) + 6 }}
+          >
+            anomaly: {band.kind}
+          </span>
+        ) : null,
       )}
+      {Option.match(comparison, {
+        onNone: () => null,
+        onSome: (paths) => (
+          <span
+            className="pointer-events-none absolute right-4 font-label text-[10px] leading-3 text-ghost"
+            style={{ top: Math.min(Math.max(paths.label - 16, TOP + 2), BOTTOM - 26) }}
+          >
+            ghost
+          </span>
+        ),
+      })}
       {ticks.map((tick) =>
         labelled.has(tick) ? (
           <span
             key={tick}
             className={cn(
-              "pointer-events-none absolute top-[100px] font-label text-[11px] leading-[14px] whitespace-pre text-faint",
+              "pointer-events-none absolute top-[127px] font-label text-[10px] leading-3 whitespace-pre text-faint",
               tick === ticks[ticks.length - 1] && ticks.length > 1 ? "-translate-x-full" : "",
               tick !== ticks[0] && tick !== ticks[ticks.length - 1] ? "-translate-x-1/2" : "",
             )}
-            style={{ left: fractionOf(tick, span) * width }}
+            style={{ left: x(tick) }}
           >
-            {tick >= 60 ? clock(tick).slice(0, 5) : `${fixed(tick, tick % 1 === 0 ? 0 : 1)} s`}
+            {tickLabel(tick)}
           </span>
         ) : null,
       )}
@@ -295,123 +305,82 @@ const Track = ({ flight, ghost, t }: TrackProps) => {
   );
 };
 
-const statusOf = (flight: Option.Option<FlightView>, following: boolean, transport: Transport) =>
-  Option.match(flight, {
-    onNone: () => "idle",
-    onSome: (view) => {
-      if (!view.live) return "replay";
-
-      if (view.status?.finished === true) return "recorded";
-
-      if (!following) return "scrubbing";
-
-      return transport.playing ? "live" : "paused";
-    },
-  });
-
-const QuietButton = ({
-  pressed,
-  onClick,
-  children,
-  label,
-}: {
-  readonly pressed?: boolean;
-  readonly onClick: () => void;
-  readonly children: string;
-  readonly label: string;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={pressed}
-    title={label}
-    className={cn(
-      "cursor-pointer font-label text-[11px] leading-[14px] transition-colors hover:text-ink",
-      pressed === true ? "text-blue" : "text-faint",
-    )}
-  >
-    {children}
-  </button>
-);
-
 export const TimeMachine = () => {
   const flight = useAtomValue(activeFlight);
   const ghost = useAtomValue(ghostFlight);
   const loading = useAtomValue(activeRunLoading);
   const t = useAtomValue(playhead);
   const following = useAtomValue(followLive);
-  const [charts, setCharts] = useAtom(telemetryOpen);
   const transport = useTransport();
-  const status = statusOf(flight, following, transport);
-
-  const total = Option.match(flight, {
-    onNone: () => 0,
-    onSome: (view) => spanOf(view).end,
-  });
+  const live = transport.live && following;
 
   return (
-    <footer
-      aria-label="Flight Time Machine"
-      className="absolute inset-x-10 bottom-0 flex h-40 gap-10 px-6 pt-[22px] pb-6"
-    >
-      <div className="flex w-[180px] shrink-0 flex-col justify-between">
-        <div className="flex flex-col gap-0.5">
-          <p className="font-display text-[36px] leading-10 text-ink tabular-nums">
-            {fixed(t, 2)} s
+    <footer aria-label="Flight Time Machine" className="flex h-[175px] gap-6 px-5 pt-4 pb-[18px]">
+      <div className="flex w-[176px] shrink-0 flex-col justify-between">
+        <div className="flex flex-col gap-[3px] font-label text-[11px] leading-[14px]">
+          <h2 className="font-normal text-ink-soft">FLIGHT TIME MACHINE</h2>
+          <p className="text-muted">
+            {Option.match(flight, {
+              onNone: () => (loading ? "loading run…" : "no flight yet: press Play or open a run"),
+              onSome: (view) => `${view.live ? "LIVE" : "REPLAY"} · ${view.label}`,
+            })}
           </p>
-          <p className="font-label text-[12px] leading-4 text-faint">
-            of {fixed(total, 2)} · {loading ? "loading" : status}
-            {status === "scrubbing" || (!transport.live && transport.hasLiveSession) ? (
-              <>
-                {" · "}
-                <button
-                  type="button"
-                  onClick={transport.goLive}
-                  title="Follow the live session (L)"
-                  className="cursor-pointer text-blue hover:underline"
-                >
-                  go live
-                </button>
-              </>
-            ) : null}
-          </p>
+          {Option.isSome(ghost) ? <p className="text-ghost">vs ghost · base</p> : null}
         </div>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-1 font-label text-[11px] leading-[14px] text-faint hover:text-ink">
-            <span className="sr-only">Speed</span>
-            <select
-              aria-label="Speed"
-              value={String(transport.speed)}
-              onChange={(event) => transport.setSpeed(Number(event.target.value))}
-              className="cursor-pointer appearance-none bg-transparent outline-none"
+        <div className="flex flex-col gap-2">
+          <p className="font-label text-[16px] leading-5 whitespace-pre text-ink tabular-nums">
+            {clock(t)}{" "}
+            <span className="text-faint">
+              /{" "}
+              {Option.match(flight, {
+                onNone: () => clock(0),
+                onSome: (view) => clock(spanOf(view).end),
+              })}
+            </span>
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={transport.toggle}
+              aria-label={transport.playing ? "Pause" : "Play"}
+              className="flex size-[30px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink text-white hover:bg-ink-soft"
             >
-              {SPEEDS.map((speed) => (
-                <option key={speed} value={String(speed)}>
-                  {String(speed)}×
-                </option>
-              ))}
-            </select>
-          </label>
-          <QuietButton onClick={transport.reset} label="Restart (R)">
-            reset
-          </QuietButton>
-          <QuietButton
-            pressed={charts}
-            onClick={() => setCharts(!charts)}
-            label="Charts and firmware log (T)"
-          >
-            {charts ? "charts ▾" : "charts ▴"}
-          </QuietButton>
+              {transport.playing ? <PauseIcon /> : <PlayIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={transport.reset}
+              aria-label="Reset"
+              className="flex size-[30px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-surface text-ink hover:border-ink"
+            >
+              <ResetIcon className="size-3" />
+            </button>
+            <button
+              type="button"
+              onClick={transport.goLive}
+              title={live ? "Following the live session (L)" : "Back to the live session (L)"}
+              className={cn(
+                "flex h-[30px] cursor-pointer items-center gap-1.5 rounded-full border bg-surface px-2.5 font-label text-[11px] leading-[14px] whitespace-pre",
+                live ? "border-fail text-fail" : "border-line-strong text-ink",
+              )}
+            >
+              <span
+                className={cn(
+                  "size-1.5 rounded-[3px]",
+                  live ? "animate-pulse bg-fail" : "bg-faint",
+                )}
+              />
+              {transport.live ? "LIVE" : "BACK TO LIVE"}
+              <kbd className="text-[10px] leading-3 text-faint">L</kbd>
+            </button>
+          </div>
         </div>
       </div>
       {Option.match(flight, {
         onNone: () => (
-          <div className="relative min-w-0 flex-1" style={{ height: HEIGHT }}>
-            <span className="absolute inset-x-0 h-px bg-line-strong" style={{ top: AXIS_Y }} />
-            <p className="absolute top-12 left-0 font-label text-[12px] text-faint">
-              {loading
-                ? "loading run…"
-                : "press play or open a run; the timeline fills as the drone flies"}
+          <div className="mt-[22px] flex h-24 min-w-0 flex-1 items-center justify-center border border-dashed border-line-strong">
+            <p className="text-[13px] leading-4 text-muted">
+              The timeline fills as the drone flies.
             </p>
           </div>
         ),
