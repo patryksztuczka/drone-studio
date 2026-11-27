@@ -1,6 +1,6 @@
 # Engine protocol
 
-Drone Studio talks to `drone-engine` (crates/drone-engine) over one WebSocket on localhost. The engine prints `DRONE_ENGINE_READY <url>` on stdout when it listens, and writes `.dev/engine.json` (`{ "url", "pid" }`) unless `DRONE_ENGINE_NO_STATE` is set. The default URL is `ws://127.0.0.1:47800`; `DRONE_ENGINE_PORT` overrides the port (`0` picks a free one). `DRONE_ROOT` points it at the repository; otherwise it searches up from its working directory.
+Drone Studio talks to `drone-engine` (crates/drone-engine) over one WebSocket on localhost. The engine prints `DRONE_ENGINE_READY <url>` on stdout when it listens, and writes `.dev/engine.json` (`{ "url", "pid" }`) unless `DRONE_ENGINE_NO_STATE` is set; it removes the file again when it gets SIGINT or SIGTERM. The default URL is `ws://127.0.0.1:47800`; `DRONE_ENGINE_PORT` overrides the port (`0` picks a free one). `DRONE_ROOT` points it at the repository; otherwise it searches up from its working directory.
 
 ## Messages
 

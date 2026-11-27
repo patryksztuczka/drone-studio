@@ -329,6 +329,7 @@ impl Engine {
                 )
             }
             "emu.status" => Ok(emu_status(&self.root)),
+            "emu.smoke" => Ok(start_emu_smoke(&self.root, bus)),
             "real.status" => Ok(
                 json!({ "connected": false, "link": "none", "policy": "read-only", "detail": "Real hardware links arrive in M2 behind the Safety Gate. Until then Studio never sends commands to a physical board." }),
             ),
@@ -344,6 +345,40 @@ fn flight_params() -> Value {
 
 fn flight_core_names() -> Vec<&'static str> {
     drone_runner::param_names().to_vec()
+}
+
+fn drone_command(root: &std::path::Path) -> Command {
+    let sibling = std::env::current_exe()
+        .ok()
+        .map(|exe| exe.with_file_name(if cfg!(windows) { "drone.exe" } else { "drone" }))
+        .filter(|p| p.is_file());
+    let mut cmd = match sibling {
+        Some(bin) => Command::new(bin),
+        None => {
+            let mut c = Command::new("cargo");
+            c.args(["run", "-q", "--release", "-p", "drone-cli", "--"]);
+            c
+        }
+    };
+    cmd.current_dir(root);
+    cmd
+}
+
+fn start_emu_smoke(root: &std::path::Path, bus: &broadcast::Sender<Outgoing>) -> Value {
+    let mut cmd = drone_command(root);
+    cmd.args(["--json", "emu", "smoke"]);
+    let bus = bus.clone();
+    let _ = bus.send(notification("emu.smoke.started", json!({})));
+    std::thread::spawn(move || {
+        let report = match cmd.output() {
+            Ok(out) => serde_json::from_slice::<Value>(&out.stdout).unwrap_or_else(|_| {
+                json!({ "ok": false, "error": String::from_utf8_lossy(&out.stderr).lines().last().unwrap_or("drone emu smoke failed").to_owned() })
+            }),
+            Err(e) => json!({ "ok": false, "error": e.to_string() }),
+        };
+        let _ = bus.send(notification("emu.smoke.finished", report));
+    });
+    json!({ "started": true })
 }
 
 fn emu_status(root: &std::path::Path) -> Value {

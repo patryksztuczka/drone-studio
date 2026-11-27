@@ -119,6 +119,34 @@ async fn ticker(engine: Arc<Mutex<Engine>>, bus: broadcast::Sender<Outgoing>) {
     }
 }
 
+async fn remove_state_on_exit(state_file: Option<PathBuf>) {
+    #[cfg(unix)]
+    let terminate = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut s) => {
+                s.recv().await;
+            }
+            Err(_) => std::future::pending::<()>().await,
+        }
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {}
+        () = terminate => {}
+    }
+    if let Some(file) = state_file {
+        let ours = std::fs::read_to_string(&file)
+            .ok()
+            .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+            .is_some_and(|v| v["pid"] == json!(std::process::id()));
+        if ours {
+            let _ = std::fs::remove_file(&file);
+        }
+    }
+    std::process::exit(0);
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let root = find_root()?;
@@ -136,14 +164,18 @@ async fn main() -> anyhow::Result<()> {
     let addr = listener.local_addr()?;
     let url = format!("ws://{addr}");
     let engine = Arc::new(Mutex::new(Engine::open(root.clone(), url.clone())?));
-    if std::env::var_os("DRONE_ENGINE_NO_STATE").is_none() {
-        let state_dir = root.join(".dev");
-        let _ = std::fs::create_dir_all(&state_dir);
+    let state_file = (std::env::var_os("DRONE_ENGINE_NO_STATE").is_none())
+        .then(|| root.join(".dev/engine.json"));
+    if let Some(file) = &state_file {
+        if let Some(dir) = file.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
         let _ = std::fs::write(
-            state_dir.join("engine.json"),
+            file,
             json!({ "url": url, "pid": std::process::id() }).to_string(),
         );
     }
+    tokio::spawn(remove_state_on_exit(state_file));
     println!("DRONE_ENGINE_READY {url}");
     let (bus, _) = broadcast::channel::<Outgoing>(256);
     tokio::spawn(ticker(engine.clone(), bus.clone()));
