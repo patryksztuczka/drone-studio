@@ -1,6 +1,6 @@
 # Client state lives in Effect atoms from `packages/client-runtime`
 
-**Status:** accepted, 2026-11-08.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 The web and mobile apps read the same data from the same api, and React does not run Effect. A data-fetching library that works through Promises would leave Effect at every call: a typed failure would reach the component as a squashed `Error` it cannot match on, cancellation would need a second mechanism, and each app would keep its own copy of the hooks, because hooks cannot move into a package without React.
 

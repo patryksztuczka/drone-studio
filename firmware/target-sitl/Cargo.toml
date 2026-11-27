@@ -1,0 +1,16 @@
+[package]
+name = "target-sitl"
+description = "Runs flight-core against the simulator in strict lockstep, passing every step through the wire protocol."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+drone-protocol = { workspace = true, features = ["std"] }
+flight-config.workspace = true
+flight-core.workspace = true
+flight-hal.workspace = true
+
+[lints]
+workspace = true

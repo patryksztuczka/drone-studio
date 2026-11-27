@@ -10,11 +10,11 @@ export default defineConfig({
     sortImports: {},
     ignorePatterns: [
       "tools/oxlint/anti-slop/**",
-      "apps/web/src/paraglide/**",
-      "apps/mobile/src/paraglide/**",
-      "apps/mobile/uniwind-types.d.ts",
       ".scratch/**",
       "pnpm-lock.yaml",
+      "hardware/generated/**",
+      "emu/generated/**",
+      "runs/**",
     ],
   },
   staged: {

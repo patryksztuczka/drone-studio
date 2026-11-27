@@ -1,6 +1,6 @@
 # The desktop app is a thin Electron client of the deployed app
 
-**Status:** accepted, 2026-11-08.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 We wanted a desktop app without a second front end or a second api. The web app already talks to one origin: `HttpApi`, RPC and better-auth all use `location.origin` plus `/api`, and the session lives in a same-origin cookie. better-auth's client refuses any origin that is not `http:` or `https:`, and it sends absolute callback URLs built from `location.origin` that end up in emails. A custom scheme such as `app://` breaks both.
 

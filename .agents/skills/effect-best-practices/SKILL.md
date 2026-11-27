@@ -1,14 +1,16 @@
 ---
 name: effect-best-practices
-description: House rules for Effect v4 code in this repository. Use whenever you write, review or refactor Effect code (apps/api, apps/cli, apps/infra, packages/domain, apps/web/src/runtime.ts and feature api hooks): services and layers, typed errors, Schema, Config, HttpApi and RPC handlers, repositories, retries, entry points, and @effect/vitest tests. Also use when a lint message links to .agents/skills/effect-best-practices/references/.
+description: House rules for Effect v4 code in this repository. Use whenever you write, review or refactor Effect code (apps/desktop, the renderer's engine client and atoms, any TypeScript package): services and layers, typed errors, Schema, Config, retries, entry points, and @effect/vitest tests. Also use when a lint message links to .agents/skills/effect-best-practices/references/.
 ---
 
 # Effect best practices
 
 How Effect code is written here. Each rule has an id (`errors.naming`); cite it in a review finding. The rules oxlint enforces are listed in [13](references/13-lint-rules.md), so a review spends its attention on the rest.
 
-- **Version:** `effect@4.0.7`, with `@effect/platform-node`, `@effect/sql-pg` and `@effect/vitest` on the same exact version. 4.1.0 removed `effect/Crypto`, which `alchemy@2.0.0-beta.84` imports. Bump Effect only together with Alchemy, as a dependency change that needs owner sign-off (AGENTS.md).
-- **Source first.** Before using an API you have not used in this repo, read it at the pinned version. Run `pnpm sources:fetch` once: it clones the tagged sources into `.repos/` (gitignored), with `.repos/effect`, `.repos/alchemy` and `.repos/better-auth` pointing at the versions in `pnpm-workspace.yaml`. Read `.repos/effect/packages/effect/src/` and its tests, and the installed `node_modules/.pnpm/effect@4.0.7/node_modules/effect/AGENTS.md` and `ai-docs/`. Blog posts and model memory are often v3 and wrong. Never invent an API; if the source does not show it, it does not exist.
+The examples come from the template this project started from: a todos api with HttpApi, RPC, Postgres and better-auth. That stack is gone (root ADR 0016), and the rules about it (`structure.stores`, `errors.http`, `schema.sharing`, the api and Worker entry points) apply only if a later milestone brings a server back. The rest holds for the Effect code that remains: the desktop main process and the TypeScript that talks to `drone-engine`.
+
+- **Version:** `effect@4.0.7`, with `@effect/platform-node` and `@effect/vitest` on the same exact version. A bump is a dependency change that needs owner sign-off (AGENTS.md).
+- **Source first.** Before using an API you have not used in this repo, read it at the pinned version. Run `pnpm sources:fetch` once: it clones the tagged sources into `.repos/` (gitignored), with `.repos/effect` and `.repos/electron` pointing at the versions in `pnpm-workspace.yaml`. Read `.repos/effect/packages/effect/src/` and its tests, and the installed `node_modules/.pnpm/effect@4.0.7/node_modules/effect/AGENTS.md` and `ai-docs/`. Blog posts and model memory are often v3 and wrong. Never invent an API; if the source does not show it, it does not exist.
 - **Principle:** features are service methods; transports stay thin. A handler decodes input, calls one service method and maps its errors. Pure work is a plain function next to the service.
 
 ## Which reference to read
@@ -19,7 +21,7 @@ How Effect code is written here. Each rule has an id (`errors.naming`); cite it 
 | adding an endpoint or an RPC                               | [06](references/06-schema.md) `schema.sharing`, [02](references/02-typed-errors.md) `errors.http`, [05](references/05-project-structure.md) |
 | writing SQL or a migration                                 | [05](references/05-project-structure.md) `structure.stores`, [12](references/12-test-layers-and-infrastructure.md)                          |
 | reading an env var or a secret                             | [07](references/07-configuration.md)                                                                                                        |
-| touching `server.ts`, `worker.ts`, `main.ts`, `runtime.ts` | [10](references/10-runtimes-and-entry-points.md)                                                                                            |
+| touching an entry point such as `apps/desktop/src/main.ts` | [10](references/10-runtimes-and-entry-points.md)                                                                                            |
 | writing a test                                             | [11](references/11-testing.md), [12](references/12-test-layers-and-infrastructure.md)                                                       |
 | writing a form or reading data in an app                   | [06](references/06-schema.md) `schema.forms`, [10](references/10-runtimes-and-entry-points.md) `runtime.web`                                |
 | fixing a lint error                                        | the reference the message links to; [13](references/13-lint-rules.md) for the full list                                                     |

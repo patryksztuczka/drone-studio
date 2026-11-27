@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "drone": {
+      "command": "cargo",
+      "args": ["run", "-q", "--release", "-p", "drone-mcp"]
+    }
+  }
+}

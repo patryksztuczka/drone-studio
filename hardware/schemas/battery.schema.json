@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/battery.schema.json",
+  "title": "Battery pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "name",
+    "chemistry",
+    "cells",
+    "capacity_mah",
+    "mass_g",
+    "max_discharge_c",
+    "cell_voltage",
+    "ocv_curve",
+    "thevenin"
+  ],
+  "properties": {
+    "kind": { "const": "battery" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "chemistry": { "enum": ["lipo", "lihv", "liion"] },
+    "cells": { "type": "integer", "minimum": 1, "maximum": 6 },
+    "capacity_mah": { "type": "number", "minimum": 50, "maximum": 10000 },
+    "mass_g": { "type": "number", "exclusiveMinimum": 0, "maximum": 2000 },
+    "max_discharge_c": { "type": "number", "exclusiveMinimum": 0, "maximum": 200 },
+    "cell_voltage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["full", "nominal", "empty"],
+      "properties": {
+        "full": { "type": "number", "minimum": 3.0, "maximum": 4.5 },
+        "nominal": { "type": "number", "minimum": 3.0, "maximum": 4.5 },
+        "empty": { "type": "number", "minimum": 2.5, "maximum": 4.0 }
+      }
+    },
+    "ocv_curve": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "prefixItems": [
+          { "type": "number", "minimum": 0, "maximum": 1 },
+          { "type": "number", "minimum": 2.5, "maximum": 4.5 }
+        ]
+      }
+    },
+    "thevenin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["r0_ohm", "r1_ohm", "c1_f"],
+      "properties": {
+        "r0_ohm": { "type": "number", "exclusiveMinimum": 0, "maximum": 2 },
+        "r1_ohm": { "type": "number", "minimum": 0, "maximum": 2 },
+        "c1_f": { "type": "number", "exclusiveMinimum": 0, "maximum": 100000 }
+      }
+    }
+  }
+}

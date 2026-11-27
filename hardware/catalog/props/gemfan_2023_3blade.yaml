@@ -1,0 +1,10 @@
+kind: prop
+id: gemfan_2023_3blade
+name: Gemfan 2023 tri-blade
+diameter_mm: 51
+pitch_in: 2.3
+blades: 3
+mass_g: 0.6
+thrust_coefficient: 0.20
+torque_coefficient: 0.020
+rotor_drag_coefficient: 0.045

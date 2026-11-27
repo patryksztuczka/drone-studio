@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import {
   createWriteStream,
   existsSync,
@@ -19,23 +19,18 @@ const READY_TIMEOUT_MS = 180_000;
 const STOP_GRACE_MS = 5_000;
 
 const USAGE =
-  "Usage: node scripts/dev.mjs [up|stop|status|ports|desktop|mobile|db:up|db:migrate|db:down]\n" +
-  "  up          Postgres, migrations, the api and the web app (default)\n" +
+  "Usage: node scripts/dev.mjs [up|stop|status|ports|desktop]\n" +
+  "  up          the web app's Vite dev server and drone-engine (default)\n" +
   "  stop        stops a pnpm dev started from this worktree\n" +
   "  status      prints .dev/state.json when pnpm dev is running\n" +
   "  ports       prints the ports and URLs this worktree uses, without starting anything\n" +
-  "  desktop ... builds apps/desktop and opens it on the running pnpm dev; arguments after -- go to Electron\n" +
-  "  mobile ...  builds apps/mobile for the iOS simulator and runs it on the running pnpm dev; arguments after -- go to expo run:ios\n" +
-  "  db:up       starts this worktree's Postgres container\n" +
-  "  db:migrate  applies packages/database/migrations to it\n" +
-  "  db:down     stops the container and keeps its volume\n" +
-  "  cli ...     runs the CLI (apps/cli) with this worktree's DATABASE_URL and api port\n";
+  "  desktop ... builds apps/desktop and opens it on this worktree's web dev server, starting one when none runs; the window starts its own drone-engine; arguments after -- go to Electron\n";
 
 const statePath = (root) => join(root, ".dev", "state.json");
 
 const logPath = (root, name) => join(root, ".dev", "logs", `${name}.log`);
 
-export function isAlive(pid) {
+function isAlive(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
 
   try {
@@ -47,7 +42,7 @@ export function isAlive(pid) {
   }
 }
 
-export function readState(root) {
+function readState(root) {
   const path = statePath(root);
 
   if (!existsSync(path)) return undefined;
@@ -83,35 +78,6 @@ const delay = (milliseconds) =>
     setTimeout(resolveDelay, milliseconds);
   });
 
-function runLogged(root, command, args, variables, log) {
-  log.write(`$ ${[command, ...args].join(" ")}\n`);
-
-  const result = spawnSync(command, args, {
-    cwd: root,
-    env: { ...process.env, ...variables },
-    encoding: "utf8",
-  });
-
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-
-  log.write(output);
-  process.stdout.write(output);
-
-  return result.status ?? 1;
-}
-
-const composeUp = (root, variables, log) =>
-  runLogged(root, "docker", ["compose", "up", "--detach", "--wait"], variables, log);
-
-const migrate = (root, variables, log) =>
-  runLogged(
-    root,
-    "pnpm",
-    ["--silent", "--filter", "@drone-studio/cli", "start", "db", "migrate"],
-    variables,
-    log,
-  );
-
 function prefixLines(prefix, stream, target, log) {
   let pending = "";
 
@@ -146,6 +112,55 @@ function startChild(root, name, args, variables) {
   prefixLines(`[${name}]`, child.stderr, process.stderr, log);
 
   return child;
+}
+
+const engineBinary = (root) => join(root, "target", "release", "drone-engine");
+
+function buildEngine(root) {
+  const log = createWriteStream(logPath(root, "engine-build"), { flags: "w" });
+
+  process.stdout.write("dev: cargo build --release -p drone-engine\n");
+
+  return new Promise((resolveBuild) => {
+    const cargo = spawn("cargo", ["build", "--release", "-p", "drone-engine"], {
+      cwd: root,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    cargo.stdout.pipe(log);
+    cargo.stderr.pipe(log);
+    cargo.on("error", () => resolveBuild(false));
+    cargo.on("exit", (code) => resolveBuild(code === 0));
+  });
+}
+
+function startEngine(root, port) {
+  const log = createWriteStream(logPath(root, "engine"), { flags: "w" });
+
+  const child = spawn(engineBinary(root), [], {
+    cwd: root,
+    env: { ...process.env, DRONE_ROOT: root, DRONE_ENGINE_PORT: String(port) },
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  prefixLines("[engine]", child.stdout, process.stdout, log);
+  prefixLines("[engine]", child.stderr, process.stderr, log);
+
+  const ready = new Promise((resolveReady) => {
+    let seen = "";
+
+    child.stdout.on("data", (chunk) => {
+      seen += chunk.toString("utf8");
+
+      const match = /DRONE_ENGINE_READY (\S+)/.exec(seen);
+
+      if (match !== null) resolveReady(match[1]);
+    });
+    child.on("exit", () => resolveReady(undefined));
+  });
+
+  return { child, ready };
 }
 
 function signalGroup(pid, signal) {
@@ -186,9 +201,7 @@ async function waitUntilReady(urls, children) {
   while (Date.now() < deadline) {
     if (children.some((child) => child.exitCode !== null)) return false;
 
-    if ((await answers(`${urls.api}/api/health`)) && (await answers(`${urls.web}/api/health`))) {
-      return true;
-    }
+    if (await answers(urls.web)) return true;
 
     await delay(500);
   }
@@ -196,70 +209,53 @@ async function waitUntilReady(urls, children) {
   return false;
 }
 
-function prepareDatabase(root, variables) {
-  mkdirSync(join(root, ".dev", "logs"), { recursive: true });
-
-  const log = createWriteStream(logPath(root, "db"), { flags: "w" });
-
-  if (composeUp(root, variables, log) !== 0) {
-    process.stderr.write(
-      `dev: Postgres or Mailpit did not start (log: ${logPath(root, "db")}). If port ${variables[PORT_VARIABLES.postgres]} is taken, set ${PORT_VARIABLES.postgres}.\n`,
-    );
-    log.end();
-
-    return 1;
-  }
-
-  const status = migrate(root, variables, log);
-
-  log.end();
-
-  return status;
-}
-
-async function up(root) {
-  const running = runningState(root);
-
-  if (running !== undefined) {
-    process.stdout.write(
-      `dev: already running (pid ${String(running.pid)}): web ${running.urls.web}, api ${running.urls.api}\n`,
-    );
-
-    return 0;
-  }
-
-  const environment = devEnvironment(root, process.env);
-  const { ports, urls, variables } = environment;
-
-  for (const service of ["web", "api"]) {
+async function portsAreFree(ports, services) {
+  for (const service of services) {
     if (!(await portIsFree(ports[service]))) {
       process.stderr.write(
         `dev: port ${String(ports[service])} (${service}) is taken. Stop what holds it or set ${PORT_VARIABLES[service]}.\n`,
       );
 
-      return 1;
+      return false;
     }
   }
 
-  process.stdout.write(
-    `dev: worktree ${root}\ndev: web ${urls.web}, api ${urls.api}, mail ${urls.mailpit}, postgres ${urls.database} (compose project ${environment.composeProject})\n`,
-  );
+  return true;
+}
 
-  if (prepareDatabase(root, variables) !== 0) return 1;
+async function startWeb(root, { withEngine }) {
+  const { ports, urls, variables } = devEnvironment(root, process.env);
 
-  const api = startChild(root, "api", ["--filter", "@drone-studio/infra", "run", "dev"], variables);
+  if (!(await portsAreFree(ports, withEngine ? ["web", "engine"] : ["web"]))) return undefined;
+
+  process.stdout.write(`dev: worktree ${root}\ndev: web ${urls.web}\n`);
+  mkdirSync(join(root, ".dev", "logs"), { recursive: true });
+
+  if (withEngine && !(await buildEngine(root))) {
+    process.stderr.write(
+      `dev: cargo could not build drone-engine; see ${logPath(root, "engine-build")}\n`,
+    );
+
+    return undefined;
+  }
+
+  const engine = withEngine ? startEngine(root, ports.engine) : undefined;
   const web = startChild(root, "web", ["--filter", "@drone-studio/web", "run", "dev"], variables);
-  const children = [api, web];
+
+  const children =
+    engine === undefined ? { web: web.pid } : { web: web.pid, engine: engine.child.pid };
 
   const state = {
     status: "starting",
     pid: process.pid,
     root,
-    composeProject: environment.composeProject,
     ports,
-    urls,
-    children: { api: api.pid, web: web.pid },
-    logs: { db: logPath(root, "db"), api: logPath(root, "api"), web: logPath(root, "web") },
+    urls: engine === undefined ? { web: urls.web } : urls,
+    children,
+    logs:
+      engine === undefined
+        ? { web: logPath(root, "web") }
+        : { web: logPath(root, "web"), engine: logPath(root, "engine") },
     startedAt: new Date().toISOString(),
   };
 
@@ -267,38 +263,79 @@ async function up(root) {
 
   let stopping = false;
 
-  const shutdown = async (code) => {
+  const shutdown = async () => {
     if (stopping) return;
 
     stopping = true;
-    await stopChildren(children.map((child) => child.pid ?? -1));
+    await stopChildren(Object.values(children).map((pid) => pid ?? -1));
     rmSync(statePath(root), { force: true });
+  };
+
+  const exitWith = async (code) => {
+    await shutdown();
     process.exit(code);
   };
 
-  process.on("SIGINT", () => void shutdown(130));
-  process.on("SIGTERM", () => void shutdown(143));
+  process.on("SIGINT", () => void exitWith(130));
+  process.on("SIGTERM", () => void exitWith(143));
 
-  for (const child of children) {
-    child.on("exit", (code) => {
-      if (stopping) return;
+  const exited = new Promise((resolveExit) => {
+    web.on("exit", (code) => resolveExit(code ?? 1));
+    engine?.child.on("exit", (code) => resolveExit(code ?? 1));
+  });
 
-      process.stderr.write(`dev: a child exited with code ${String(code)}; stopping the rest\n`);
-      void shutdown(1);
-    });
-  }
-
-  if (await waitUntilReady(urls, children)) {
-    writeState(root, { ...state, status: "ready" });
-    process.stdout.write(
-      `dev: ready. Open ${urls.web}; mail lands in ${urls.mailpit}. State in .dev/state.json, logs in .dev/logs/. Stop with Ctrl-C or pnpm dev:stop.\n`,
+  if (engine !== undefined && (await engine.ready) === undefined) {
+    process.stderr.write(
+      `dev: drone-engine exited before it was ready; see ${logPath(root, "engine")}\n`,
     );
-  } else if (!stopping) {
-    process.stderr.write("dev: the api or the web app did not answer /api/health in time\n");
-    await shutdown(1);
+    await shutdown();
+
+    return undefined;
   }
 
-  return 0;
+  if (!(await waitUntilReady(urls, [web]))) {
+    process.stderr.write(`dev: the web dev server did not answer ${urls.web} in time\n`);
+    await shutdown();
+
+    return undefined;
+  }
+
+  const ready = { ...state, status: "ready" };
+
+  writeState(root, ready);
+
+  return { state: ready, exited, shutdown, isStopping: () => stopping };
+}
+
+async function up(root) {
+  const running = runningState(root);
+
+  if (running !== undefined) {
+    process.stdout.write(
+      `dev: already running (pid ${String(running.pid)}): web ${running.urls.web}\n`,
+    );
+
+    return 0;
+  }
+
+  const web = await startWeb(root, { withEngine: true });
+
+  if (web === undefined) return 1;
+
+  process.stdout.write(
+    `dev: ready. Open ${web.state.urls.web} (engine ${web.state.urls.engine}). State in .dev/state.json, logs in .dev/logs/. Stop with Ctrl-C or pnpm dev:stop.\n`,
+  );
+
+  const code = await web.exited;
+
+  if (web.isStopping()) return 0;
+
+  process.stderr.write(
+    `dev: the web dev server or drone-engine exited with code ${String(code)}\n`,
+  );
+  await web.shutdown();
+
+  return 1;
 }
 
 async function stop(root) {
@@ -324,103 +361,52 @@ async function stop(root) {
   return 0;
 }
 
-function database(root, task) {
-  const { variables } = devEnvironment(root, process.env);
+function runPnpm(root, args, environment) {
+  return new Promise((resolveRun) => {
+    const child = spawn("pnpm", args, { cwd: root, stdio: "inherit", env: environment });
 
-  if (task === "db:down") {
-    return (
-      spawnSync("docker", ["compose", "down"], {
-        cwd: root,
-        env: { ...process.env, ...variables },
-        stdio: "inherit",
-      }).status ?? 1
+    child.on("error", () => resolveRun(1));
+    child.on("exit", (code) => resolveRun(code ?? 1));
+  });
+}
+
+async function desktop(root, args) {
+  const running = runningState(root);
+
+  if (running !== undefined && running.status !== "ready") {
+    process.stderr.write("dev: the web dev server of this checkout is still starting; try again\n");
+
+    return 1;
+  }
+
+  const started = running === undefined ? await startWeb(root, { withEngine: false }) : undefined;
+  const url = running?.urls.web ?? started?.state.urls.web;
+
+  if (url === undefined) return 1;
+
+  try {
+    const build = await runPnpm(
+      root,
+      ["--silent", "--filter", "@drone-studio/desktop", "run", "build"],
+      process.env,
     );
+
+    if (build !== 0) return build;
+
+    const { ELECTRON_RUN_AS_NODE: _runAsNode, ...environment } = process.env;
+
+    return await runPnpm(
+      root,
+      ["--silent", "--filter", "@drone-studio/desktop", "exec", "electron", ".", ...args],
+      {
+        ...environment,
+        DESKTOP_RENDERER_URL: url,
+        DESKTOP_USER_DATA_DIR: join(root, ".dev", "desktop"),
+      },
+    );
+  } finally {
+    await started?.shutdown();
   }
-
-  mkdirSync(join(root, ".dev", "logs"), { recursive: true });
-
-  const log = createWriteStream(logPath(root, "db"), { flags: "a" });
-  const status = task === "db:up" ? composeUp(root, variables, log) : migrate(root, variables, log);
-
-  log.end();
-
-  return status;
-}
-
-function desktop(root, args) {
-  const state = runningState(root);
-
-  if (state === undefined || state.status !== "ready") {
-    process.stderr.write("dev: the dev stack of this checkout is not ready; run pnpm dev first\n");
-
-    return 1;
-  }
-
-  const variables = {
-    DESKTOP_RENDERER_URL: state.urls.web,
-    DESKTOP_USER_DATA_DIR: join(root, ".dev", "desktop"),
-  };
-
-  const build = spawnSync(
-    "pnpm",
-    ["--silent", "--filter", "@drone-studio/desktop", "run", "build"],
-    {
-      cwd: root,
-      stdio: "inherit",
-    },
-  );
-
-  if (build.status !== 0) return build.status ?? 1;
-
-  const { ELECTRON_RUN_AS_NODE: _runAsNode, ...environment } = process.env;
-
-  const electron = spawnSync(
-    "pnpm",
-    ["--silent", "--filter", "@drone-studio/desktop", "exec", "electron", ".", ...args],
-    { cwd: root, stdio: "inherit", env: { ...environment, ...variables } },
-  );
-
-  return electron.status ?? 1;
-}
-
-function mobile(root, args) {
-  const state = runningState(root);
-
-  if (state === undefined || state.status !== "ready") {
-    process.stderr.write("dev: the dev stack of this checkout is not ready; run pnpm dev first\n");
-
-    return 1;
-  }
-
-  const { ports } = devEnvironment(root, process.env);
-
-  const variables = {
-    APP_VARIANT: "development",
-    EXPO_PUBLIC_API_URL: state.urls.web,
-    RCT_METRO_PORT: String(ports.metro),
-  };
-
-  process.stdout.write(
-    `dev: mobile app on api ${state.urls.web}, Metro on port ${String(ports.metro)}\n`,
-  );
-
-  const expo = spawnSync(
-    "pnpm",
-    [
-      "--silent",
-      "--filter",
-      "@drone-studio/mobile",
-      "exec",
-      "expo",
-      "run:ios",
-      "--port",
-      String(ports.metro),
-      ...args,
-    ],
-    { cwd: root, stdio: "inherit", env: { ...process.env, ...variables } },
-  );
-
-  return expo.status ?? 1;
 }
 
 async function main(argv) {
@@ -447,40 +433,11 @@ async function main(argv) {
     return 0;
   }
 
-  if (task === "db:up" || task === "db:migrate" || task === "db:down") return database(root, task);
-
   if (task === "desktop") {
     return desktop(
       root,
       argv.slice(1).filter((argument) => argument !== "--"),
     );
-  }
-
-  if (task === "mobile") {
-    return mobile(
-      root,
-      argv.slice(1).filter((argument) => argument !== "--"),
-    );
-  }
-
-  if (task === "cli") {
-    const result = spawnSync(
-      "pnpm",
-      [
-        "--silent",
-        "--filter",
-        "@drone-studio/cli",
-        "start",
-        ...argv.slice(1).filter((argument) => argument !== "--"),
-      ],
-      {
-        cwd: root,
-        stdio: "inherit",
-        env: { ...process.env, ...devEnvironment(root, process.env).variables },
-      },
-    );
-
-    return result.status ?? 1;
   }
 
   process.stderr.write(USAGE);

@@ -11,6 +11,8 @@ const TYPECHECK_INPUTS = /(?:^|\/)(?:tsconfig[\w.-]*\.json|package\.json)$/;
 
 const CHECKABLE = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|json|jsonc|md|css|ya?ml|html)$/;
 
+const RUST = /(?:\.rs|(?:^|\/)Cargo\.(?:toml|lock)|(?:^|\/)rust-toolchain\.toml)$/;
+
 const OUTPUT_LIMIT = 6000;
 
 const BASE_CANDIDATES = ["origin/HEAD", "origin/master", "master"];
@@ -30,6 +32,7 @@ function planChecks(changedFiles, projects) {
     files: changedFiles.filter((file) => CHECKABLE.test(file)),
     typecheck: everything || code.some((file) => TYPED.test(file) || TYPECHECK_INPUTS.test(file)),
     tests: everything ? "all" : [...owners].toSorted((left, right) => left.localeCompare(right)),
+    rust: code.some((file) => RUST.test(file)),
   };
 }
 
@@ -59,6 +62,8 @@ function commands(plan) {
       ],
     });
   }
+
+  if (plan.rust) steps.push({ name: "rust", command: ["pnpm", "run", "check:rust"] });
 
   return steps;
 }

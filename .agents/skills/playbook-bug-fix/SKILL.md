@@ -13,11 +13,9 @@ Open a todo list with the six steps.
 
 Reproduce on the surface where the bug shows:
 
-- the web app: the `verify-web` skill (`pnpm dev`, `pnpm dev:doctor`, then drive the browser);
-- the mobile app: the `verify-mobile` skill (`pnpm dev:mobile`, then drive the simulator with agent-device);
-- the api: a request to the URL in `.dev/state.json`;
-- the CLI: `pnpm cli <command>`;
-- SQL or a store: an integration test on Postgres (`pnpm test:integration`).
+- the Studio: the `verify-web` skill (`pnpm dev` or `pnpm dev:desktop`, then drive the browser or the window);
+- the Rust workspace: the `drone` CLI (`cargo run -p drone-cli -- <command> --json`) or a failing `cargo test`;
+- a simulation: the same scenario and seed, which must replay the same run.
 
 Ask the user to reproduce only after you drove the surface as far as it goes, and say exactly what you could not reach. If it does not fire, tighten the conditions, synthesise the trigger or add logging until it does. No repro, no fix.
 

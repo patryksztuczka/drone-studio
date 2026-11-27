@@ -70,6 +70,103 @@ jobs:
       - name: Suppression count against the baseline (reports, never fails)
         run: pnpm check:suppressions
 
+  rust:
+    name: Rust
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the toolchain from rust-toolchain.toml
+        run: |
+          rustup toolchain install
+          rustup target add thumbv7em-none-eabihf
+          rustc --version
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Format (cargo fmt)
+        run: cargo fmt --all --check
+
+      - name: Lint (cargo clippy, warnings are errors)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test (cargo test)
+        run: cargo test --workspace
+
+      - name: no_std crates build for the flight controller target
+        run: cargo build -p flight-config -p flight-core -p drone-protocol --no-default-features --target thumbv7em-none-eabihf
+
+      - name: Hardware manifests validate and generated files are fresh
+        run: |
+          cargo run -q -p drone-cli -- validate
+          cargo run -q -p drone-cli -- codegen --check
+
+      - name: Regression suite in SITL
+        run: cargo run -q --release -p drone-cli -- sim suite --no-record
+
+  firmware:
+    name: Firmware
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: firmware/target-stm32h7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the toolchain from rust-toolchain.toml
+        run: |
+          rustup toolchain install
+          rustup target add thumbv7em-none-eabihf
+          rustc --version
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: firmware/target-stm32h7 -> target
+
+      - name: Format (cargo fmt)
+        run: cargo fmt --check
+
+      - name: Lint (cargo clippy, warnings are errors)
+        run: cargo clippy --release -- -D warnings
+
+      - name: Build the STM32H743 ELF
+        run: cargo build --release
+
+  emu:
+    name: Renode smoke
+    needs: firmware
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the toolchain from rust-toolchain.toml
+        run: |
+          rustup toolchain install
+          rustup target add thumbv7em-none-eabihf
+          rustc --version
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: |
+            . -> target
+            firmware/target-stm32h7 -> target
+
+      - name: Boot the ELF in Renode and run the Robot suite
+        run: cargo run -q -p drone-cli -- emu smoke
+
   typecheck:
     name: Typecheck
     needs: static
@@ -125,27 +222,10 @@ jobs:
       - name: Boot the built web client in Chrome (agent-browser)
         run: pnpm check:web-boot
 
-  integration:
-    name: Integration tests
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: ./.github/actions/setup
-
-      - name: Integration tests (Testcontainers, Docker on the runner)
-        run: pnpm test:integration
-      - name: Build the api image and serve the api and the web app from it
-        run: pnpm check:api-image
-
   ci-ok:
     name: CI OK
     if: always()
-    needs: [changes, static, typecheck, unit, build, integration]
+    needs: [changes, static, rust, firmware, emu, typecheck, unit, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

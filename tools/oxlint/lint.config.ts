@@ -2,8 +2,7 @@ import type { OxlintConfig } from "vite-plus/lint";
 
 const skill = ".agents/skills/effect-best-practices/references";
 
-const clientStateMessage =
-  "Client state lives in Effect atoms from @drone-studio/client-runtime (root ADR 0010), not React Query.";
+const clientStateMessage = "Client state lives in Effect atoms (root ADR 0010), not React Query.";
 
 const antiSlopRules = {
   "anti-slop/no-array-filter-map": "error",
@@ -38,14 +37,7 @@ const effectRules = {
   "@drone-studio/effect/layer-config-only-in-roots": [
     "error",
     {
-      allow: [
-        "apps/api/src/server.ts",
-        "apps/api/src/app.layer.ts",
-        "apps/infra/src/worker.ts",
-        "apps/cli/src/main.ts",
-        "apps/cli/src/commands/*.ts",
-        "apps/desktop/src/main.ts",
-      ],
+      allow: ["apps/desktop/src/main.ts"],
     },
   ],
   "@drone-studio/effect/layer-naming": "error",
@@ -73,12 +65,7 @@ const effectRules = {
   "@drone-studio/effect/run-only-in-entry-points": [
     "error",
     {
-      allow: [
-        "apps/api/src/server.ts",
-        "apps/cli/src/main.ts",
-        "apps/desktop/src/main.ts",
-        "**/vitest.global-setup.ts",
-      ],
+      allow: ["apps/desktop/src/main.ts", "**/vitest.global-setup.ts"],
     },
   ],
   "@drone-studio/effect/service-explicit-shape": "error",
@@ -152,7 +139,7 @@ const lint = {
       rules: testHygieneRules,
     },
     {
-      files: ["apps/web/**", "apps/mobile/**", "packages/ui/**"],
+      files: ["apps/web/**", "packages/ui/**"],
       plugins: ["react"],
       env: { browser: true },
     },
@@ -164,23 +151,9 @@ const lint = {
           {
             featuresRoot: "apps/web/src/features",
             layers: ["apps/web/src/shared", "apps/web/src/features", "apps/web/src/app"],
-            roots: ["apps/web/src/runtime.ts"],
+            roots: [],
           },
         ],
-      },
-    },
-    {
-      files: ["apps/mobile/src/**"],
-      rules: {
-        "@drone-studio/frontend/feature-boundaries": [
-          "error",
-          {
-            featuresRoot: "apps/mobile/src/features",
-            layers: ["apps/mobile/src/shared", "apps/mobile/src/features", "apps/mobile/src/app"],
-            roots: ["apps/mobile/src/runtime.ts"],
-          },
-        ],
-        "@drone-studio/frontend/accessible-controls": "error",
       },
     },
     {
@@ -196,22 +169,11 @@ const lint = {
       },
     },
     {
-      files: ["apps/api/**", "apps/cli/**", "apps/desktop/**", "apps/infra/**", "packages/**"],
+      files: ["apps/desktop/**", "packages/**"],
       rules: effectRules,
     },
     {
-      files: [
-        "apps/api/**",
-        "apps/cli/**",
-        "apps/desktop/**",
-        "apps/infra/**",
-        "packages/auth/**",
-        "packages/database/**",
-        "packages/mail/**",
-        "scripts/**",
-        "tools/**",
-        "*.config.ts",
-      ],
+      files: ["apps/desktop/**", "scripts/**", "tools/**", "*.config.ts"],
       env: { node: true },
     },
     {
@@ -224,9 +186,6 @@ const lint = {
     "**/node_modules/**",
     "**/coverage/**",
     "tools/oxlint/anti-slop/**",
-    "apps/web/src/paraglide/**",
-    "apps/mobile/src/paraglide/**",
-    "apps/mobile/uniwind-types.d.ts",
     ".agents/**",
     ".claude/**",
     ".scratch/**",

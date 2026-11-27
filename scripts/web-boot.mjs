@@ -20,19 +20,7 @@ const CONTENT_TYPES = {
   ".woff2": "font/woff2",
 };
 
-const SIGNED_OUT_API = new Map([
-  ["/api/auth/get-session", null],
-  [
-    "/api/sign-in-methods",
-    { emailVerificationRequired: true, socialProviders: ["github", "google"] },
-  ],
-]);
-
-const PAGES = [
-  { path: "/", element: 'a[href="/sign-up"]', landsOn: "/" },
-  { path: "/todos", element: 'input[type="email"]', landsOn: "/sign-in?redirectTo=%2Ftodos" },
-  { path: "/no-such-page", element: 'img[src*="not-found"]', landsOn: "/no-such-page" },
-];
+const PAGES = [{ path: "/", element: '[role="status"]', landsOn: "/" }];
 
 function assetPath(dist, pathname) {
   const file = normalize(join(dist, decodeURIComponent(pathname)));
@@ -44,14 +32,6 @@ function assetPath(dist, pathname) {
 function serve(dist, unexpectedApiCalls) {
   const server = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? "/", "http://web-boot.local");
-
-    if (SIGNED_OUT_API.has(pathname)) {
-      response
-        .writeHead(200, { "content-type": "application/json" })
-        .end(JSON.stringify(SIGNED_OUT_API.get(pathname)));
-
-      return;
-    }
 
     if (pathname.startsWith("/api/") || pathname.startsWith("/.well-known/")) {
       unexpectedApiCalls.push(`${request.method ?? "GET"} ${pathname}`);
@@ -147,7 +127,7 @@ async function main() {
         "console errors",
         consoleErrors.map((message) => message.text),
       ),
-      noneOf("api calls besides the signed-out ones it answers", unexpectedApiCalls),
+      noneOf("api calls", unexpectedApiCalls),
     );
   } finally {
     await browser(["close"]).catch(() => undefined);

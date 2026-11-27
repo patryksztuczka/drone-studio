@@ -1,0 +1,25 @@
+kind: scenario
+id: 05_battery_sag_landing
+name: Battery sag auto-landing
+description: Start hovering on a nearly empty pack; voltage sag must trip the low-battery failsafe, which lands and disarms gently.
+tags: [baseline, battery, failsafe]
+airframe: palm_x4_2in
+duration_s: 20
+seed: 5
+environment:
+  altitude_asl_m: 120
+  temperature_c: 20
+  turbulence: none
+initial:
+  position_m: [0, 0, 0]
+  battery_soc: 0.06
+pilot:
+  - { t: 0.5, arm: true, mode: althold, throttle: 0.5 }
+  - { t: 1.0, throttle: 0.85 }
+  - { t: 2.4, throttle: 0.5 }
+assertions:
+  - { kind: failsafe_triggered, window: [1, 15] }
+  - { kind: touchdown_speed_max_mps, max: 0.7 }
+  - { kind: disarmed_at_end }
+  - { kind: max_tilt_deg, window: [1, 20], max: 10 }
+  - { kind: battery_min_v, min: 6.0 }

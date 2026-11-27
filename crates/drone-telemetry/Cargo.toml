@@ -1,0 +1,18 @@
+[package]
+name = "drone-telemetry"
+description = "Flight recordings: runs/<id>/ with meta.json, telemetry.parquet and events.jsonl, plus summary, anomaly, slice and diff analysis."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arrow-array.workspace = true
+arrow-schema.workspace = true
+parquet.workspace = true
+serde = { workspace = true, features = ["std"] }
+serde_json.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

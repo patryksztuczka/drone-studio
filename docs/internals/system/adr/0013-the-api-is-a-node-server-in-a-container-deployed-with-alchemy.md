@@ -1,12 +1,12 @@
 # The api is a Node server in a container, deployed with Alchemy
 
-**Status:** accepted, 2026-11-09.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 drone-studio is a template, and the people who start from it host on a VPS, on AWS, GCP or Azure, on Fly, or on Cloudflare. A template whose api only runs as a Cloudflare Worker makes that vendor its first decision and the first thing to rip out.
 
 The api is one Effect program in `apps/api`: `app.layer.ts` composes the routes, the modules, better-auth and the mailer, and takes the SQL client and better-auth's database as layers. `apps/api/src/server.ts` serves it on Node with `NodeHttpServer`, next to the built SPA from `WEB_ROOT`, so browser and api share one origin. `apps/infra/api.Dockerfile` puts that server and `apps/web/dist` in one image. A container image runs on every host on the list, so it is the default.
 
-Alchemy declares the infrastructure. The default stack, `apps/infra/alchemy.run.ts`, builds the image with `Docker.Image`, runs it with `Docker.Container` on the local engine or on the Docker host `DEPLOY_DOCKER_HOST` names (`ssh://deploy@example.com`), generates better-auth's signing secret with `Alchemy.Random` and keeps its state in the app's Postgres. `apps/infra/cloudflare.run.ts` is the other host: the same program as a Cloudflare Worker in `apps/infra/src/worker.ts`, reaching Postgres through Hyperdrive. A project keeps one host and deletes the other (the `keep-or-cut` skill).
+Alchemy declares the infrastructure. The default stack, `apps/infra/alchemy.run.ts`, builds the image with `Docker.Image`, runs it with `Docker.Container` on the local engine or on the Docker host `DEPLOY_DOCKER_HOST` names (`ssh://deploy@example.com`), generates better-auth's signing secret with `Alchemy.Random` and keeps its state in the app's Postgres. `apps/infra/cloudflare.run.ts` is the other host: the same program as a Cloudflare Worker in `apps/infra/src/worker.ts`, reaching Postgres through Hyperdrive. A project keeps one host and deletes the other (the template's setup skill, linked from the README's "Origin" section).
 
 ## Consequences
 

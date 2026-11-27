@@ -8,12 +8,11 @@ description: Fix a measured slowness against a baseline. Capture and vet a basel
 You own the measurement. Tie every fix to a number; do not read the source instead of measuring. For sustained work on one metric over many attempts, use the `playbook-hillclimb` skill instead.
 
 1. **Capture a baseline** on the surface where the slowness shows, and vet it with the `benchmark-checklist` skill (read `.agents/skills/benchmark-checklist/SKILL.md`):
-   - the web app: a performance recording in the browser on the dev stack, or the Network panel timings;
-   - a request: timings of repeated calls to the api URL in `.dev/state.json`;
-   - SQL: `EXPLAIN (ANALYZE, BUFFERS)` on a database with realistic row counts;
-   - the api server or the CLI: `node --cpu-prof`.
+   - the Studio: a performance recording in the browser on `pnpm dev`, or in the desktop window through `--remote-debugging-port`;
+   - the Rust workspace: a `cargo bench` or a timed `drone sim run` / `drone sim suite` in release mode, with a fixed seed;
+   - the firmware: cycle counts in Renode, never wall-clock time on the host.
 
-   Local numbers come from the api under `node --watch` and Docker Postgres, not from the deployed host and the production Postgres. They rank fixes well, but they do not predict production latency; say so next to any absolute number.
+   Debug builds, a busy laptop and a different seed all move the numbers. Say which build, machine and seed each number came from.
 
 2. **Ground the hypotheses** in the profile and the code, not in a guess. Try the fixes in this order and stop at the first that meets the target:
    1. Don't do it: drop work whose result nothing uses.

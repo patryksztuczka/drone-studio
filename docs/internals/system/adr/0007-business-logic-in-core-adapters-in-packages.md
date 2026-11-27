@@ -1,6 +1,6 @@
 # Business logic in packages/core, each adapter in its own package
 
-**Status:** accepted, 2026-11-08.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 A CLI command, an MCP server or a local backend for a desktop app needs the same rules as the api. If the services lived in `apps/api`, each of them would have to call the api over HTTP, import `@drone-studio/api` with all its host dependencies, or implement the rules a second time.
 

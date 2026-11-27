@@ -1,0 +1,49 @@
+kind: scenario
+id: 02_step_roll_pitch
+name: Roll and pitch steps
+description: From a stable hover, command 15 degree roll and pitch steps in angle mode and check tracking.
+tags: [baseline, control]
+airframe: palm_x4_2in
+duration_s: 12
+seed: 2
+environment:
+  altitude_asl_m: 120
+  temperature_c: 20
+  turbulence: none
+initial:
+  position_m: [0, 0, 0]
+  battery_soc: 0.95
+pilot:
+  - { t: 0.5, arm: true, mode: althold, throttle: 0.5 }
+  - { t: 1.0, throttle: 0.85 }
+  - { t: 2.4, throttle: 0.5 }
+  - { t: 4.0, roll: 0.5 }
+  - { t: 5.0, roll: 0.0 }
+  - { t: 6.5, pitch: -0.5 }
+  - { t: 7.5, pitch: 0.0 }
+  - { t: 9.0, roll: -0.5, pitch: 0.5 }
+  - { t: 10.0, roll: 0.0, pitch: 0.0 }
+assertions:
+  - {
+      kind: step_response,
+      axis: roll,
+      t: 4.0,
+      target_deg: 15,
+      max_overshoot_pct: 20,
+      rise_time_max_s: 0.25,
+      settle_s: 0.6,
+      tolerance_deg: 2.0,
+    }
+  - {
+      kind: step_response,
+      axis: pitch,
+      t: 6.5,
+      target_deg: 15,
+      max_overshoot_pct: 20,
+      rise_time_max_s: 0.25,
+      settle_s: 0.6,
+      tolerance_deg: 2.0,
+    }
+  - { kind: max_tilt_deg, window: [1, 12], max: 25 }
+  - { kind: altitude_within, window: [4, 12], min: 0.3, max: 2.0 }
+  - { kind: no_failsafe }

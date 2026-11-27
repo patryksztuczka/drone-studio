@@ -1,0 +1,16 @@
+[package]
+name = "flight-core"
+description = "Hardware-independent flight control: Mahony AHRS, cascaded PID, X4 mixer, arming and failsafe (no_std)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+drone-protocol.workspace = true
+flight-config.workspace = true
+flight-hal.workspace = true
+libm.workspace = true
+
+[lints]
+workspace = true

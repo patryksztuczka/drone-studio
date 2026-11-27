@@ -1,23 +1,31 @@
 # Context map
 
+The contexts follow the [M0 + M1 blueprint](./docs/vision/drone-studio-m0-m1-blueprint.md). Each keeps its `GLOSSARY.md` under `docs/internals/<context>/`; code uses those words.
+
 ## Contexts
 
-- [Todos](./docs/internals/todos/GLOSSARY.md): owns the Todos a User keeps, their titles and whether each is done. The example context; replace it with your product's first one.
-- [Identity](./docs/internals/identity/GLOSSARY.md): owns every User, how they sign in and their Sessions. Sign-in runs on better-auth (Identity ADR 0001).
+- [Hardware](./docs/internals/hardware/GLOSSARY.md): owns the YAML manifests of components, boards, airframes and scenarios, their validation, and the code generated from them for the firmware, the simulator, Renode and the Studio. The one source of truth about the drone.
+- [Simulation](./docs/internals/simulation/GLOSSARY.md): owns the deterministic 6DOF world a flight runs in: physics, propulsion, battery, wind, ground effect and the sensor models, stepped in lockstep with the flight controller.
+- [Flight Control](./docs/internals/flight-control/GLOSSARY.md): owns the `no_std` flight core (estimation, PID cascade, mixer, arming and failsafe) and its targets: SITL, Renode and the STM32 board.
+- [Telemetry](./docs/internals/telemetry/GLOSSARY.md): owns each recorded Run (`runs/<id>/`: metadata, telemetry, events) and the queries over it: slices, anomalies and diffs.
+- **Studio**: owns what the person at the desktop app sees and does. It holds no physics or flight logic and reads everything from `drone-engine`.
 
 ## Relationships
 
-- **Identity → Todos**: every Todo belongs to one User, referenced by id only. Todos learns who is calling from Identity's authentication middleware, which provides the Current User to each request; Todos never reads Identity's tables. A request without a valid Session is refused before a Todos handler runs.
-- **Todos → Identity**: none. Identity knows nothing about Todos, so removing the Todos context leaves sign-in working.
+- **Hardware → Simulation, Flight Control, Studio**: they read the generated configuration, never the YAML directly. Hardware knows none of them.
+- **Simulation ↔ Flight Control**: the lockstep protocol in `drone-protocol`. Each simulation step sends sensor samples and receives actuator outputs; neither side reads the other's state.
+- **Simulation, Flight Control → Telemetry**: every flight writes a Run. Telemetry never drives a flight.
+- **Studio → everything**: through `drone-engine` over WebSocket JSON-RPC only (root ADR 0016). The `drone` CLI and `drone-mcp` give agents the same commands.
 
 ## Where each context's documents live
 
-Each context keeps its glossary, its ADRs and any module files in its own folder under [docs/internals](./docs/internals). Decisions that belong to no single context live in [docs/internals/system/adr](./docs/internals/system/adr).
+Each context keeps its glossary, its ADRs and any module files in its own folder under [docs/internals](./docs/internals), created with its first document. Decisions that belong to no single context live in [docs/internals/system/adr](./docs/internals/system/adr).
 
-| Context            | Docs                                                 | Code                                                                                                                                                                                                            | ADRs cited as |
-| ------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| Todos              | [docs/internals/todos](./docs/internals/todos)       | `packages/core/src/todos`, `packages/domain/src/todos`, `apps/api/src/capabilities/todos.capabilities.ts`, `packages/client-runtime/src/todos`, `apps/web/src/features/todos`, `apps/mobile/src/features/todos` | Todos ADR     |
-| Identity           | [docs/internals/identity](./docs/internals/identity) | `packages/auth`, `packages/domain/src/identity`, `packages/client-runtime/src/identity`                                                                                                                         | Identity ADR  |
-| none (system-wide) | [docs/internals/system](./docs/internals/system)     |                                                                                                                                                                                                                 | root ADR      |
-
-Identity has no folder in `packages/core` yet: better-auth holds its rules, and the adapter in `packages/auth` maps them to the contract. It gets one when Identity grows rules of its own.
+| Context            | Docs                                              | Code                                                                | ADRs cited as      |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------- | ------------------ |
+| Hardware           | [hardware](./docs/internals/hardware)             | `hardware/`, `crates/drone-schema`                                  | Hardware ADR       |
+| Simulation         | [simulation](./docs/internals/simulation)         | `crates/drone-sim`, `crates/drone-protocol`                         | Simulation ADR     |
+| Flight Control     | [flight-control](./docs/internals/flight-control) | `firmware/`, `emu/`                                                 | Flight Control ADR |
+| Telemetry          | [telemetry](./docs/internals/telemetry)           | `crates/drone-telemetry`, `runs/`                                   | Telemetry ADR      |
+| Studio             | [studio](./docs/internals/studio)                 | `apps/web`, `apps/desktop`, `crates/drone-engine`                   | Studio ADR         |
+| none (system-wide) | [docs/internals/system](./docs/internals/system)  | `crates/drone-cli`, `crates/drone-mcp`, the workspace configuration | root ADR           |

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/prop.schema.json",
+  "title": "Propeller",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "name",
+    "diameter_mm",
+    "pitch_in",
+    "blades",
+    "mass_g",
+    "thrust_coefficient",
+    "torque_coefficient",
+    "rotor_drag_coefficient"
+  ],
+  "properties": {
+    "kind": { "const": "prop" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "diameter_mm": { "type": "number", "minimum": 20, "maximum": 400 },
+    "pitch_in": { "type": "number", "exclusiveMinimum": 0, "maximum": 10 },
+    "blades": { "type": "integer", "minimum": 2, "maximum": 6 },
+    "mass_g": { "type": "number", "exclusiveMinimum": 0, "maximum": 50 },
+    "thrust_coefficient": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.5 },
+    "torque_coefficient": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.1 },
+    "rotor_drag_coefficient": { "type": "number", "minimum": 0, "maximum": 0.1 }
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/board.schema.json",
+  "title": "Flight controller board",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "name",
+    "mcu",
+    "mass_g",
+    "size_mm",
+    "thickness_mm",
+    "hse_hz",
+    "mounting_holes_mm",
+    "buses",
+    "devices",
+    "motor_outputs",
+    "motor_protocol",
+    "analog",
+    "leds",
+    "pads"
+  ],
+  "properties": {
+    "kind": { "const": "board" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "mcu": { "$ref": "common.schema.json#/$defs/id" },
+    "mass_g": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 },
+    "size_mm": { "$ref": "common.schema.json#/$defs/vec2" },
+    "thickness_mm": { "type": "number", "exclusiveMinimum": 0, "maximum": 10 },
+    "hse_hz": { "type": "integer", "minimum": 4000000, "maximum": 50000000 },
+    "mounting_holes_mm": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/vec2" } },
+    "buses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "peripheral", "frequency_hz", "pins"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "kind": { "enum": ["spi", "i2c", "uart"] },
+          "peripheral": { "$ref": "common.schema.json#/$defs/id" },
+          "frequency_hz": { "type": "integer", "minimum": 1000, "maximum": 100000000 },
+          "pins": {
+            "type": "object",
+            "minProperties": 2,
+            "propertyNames": { "enum": ["sck", "miso", "mosi", "scl", "sda", "tx", "rx"] },
+            "additionalProperties": { "$ref": "common.schema.json#/$defs/pin" }
+          }
+        }
+      }
+    },
+    "devices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "component", "bus", "position_mm"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "component": { "$ref": "common.schema.json#/$defs/id" },
+          "bus": { "$ref": "common.schema.json#/$defs/id" },
+          "chip_select": { "$ref": "common.schema.json#/$defs/pin" },
+          "interrupt": { "$ref": "common.schema.json#/$defs/pin" },
+          "address": { "type": "integer", "minimum": 8, "maximum": 119 },
+          "orientation": {
+            "enum": [
+              "cw0",
+              "cw90",
+              "cw180",
+              "cw270",
+              "cw0flip",
+              "cw90flip",
+              "cw180flip",
+              "cw270flip"
+            ]
+          },
+          "position_mm": { "$ref": "common.schema.json#/$defs/vec3" }
+        }
+      }
+    },
+    "motor_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "timer", "channel", "pin"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "timer": { "$ref": "common.schema.json#/$defs/id" },
+          "channel": { "type": "integer", "minimum": 1, "maximum": 4 },
+          "pin": { "$ref": "common.schema.json#/$defs/pin" }
+        }
+      }
+    },
+    "motor_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "frequency_hz"],
+      "properties": {
+        "kind": { "enum": ["pwm", "oneshot125", "dshot300", "dshot600"] },
+        "frequency_hz": { "type": "integer", "minimum": 50, "maximum": 48000 }
+      }
+    },
+    "analog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vbat", "current", "adc_reference_v", "adc_bits"],
+      "properties": {
+        "vbat": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pin", "adc", "channel", "divider_ratio"],
+          "properties": {
+            "pin": { "$ref": "common.schema.json#/$defs/pin" },
+            "adc": { "$ref": "common.schema.json#/$defs/id" },
+            "channel": { "type": "integer", "minimum": 0, "maximum": 31 },
+            "divider_ratio": { "type": "number", "minimum": 1, "maximum": 100 }
+          }
+        },
+        "current": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pin", "adc", "channel", "scale_mv_per_a", "offset_mv"],
+          "properties": {
+            "pin": { "$ref": "common.schema.json#/$defs/pin" },
+            "adc": { "$ref": "common.schema.json#/$defs/id" },
+            "channel": { "type": "integer", "minimum": 0, "maximum": 31 },
+            "scale_mv_per_a": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+            "offset_mv": { "type": "number" }
+          }
+        },
+        "adc_reference_v": { "type": "number", "minimum": 1.0, "maximum": 5.0 },
+        "adc_bits": { "enum": [10, 12, 14, 16] }
+      }
+    },
+    "leds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "pin", "active_high"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "pin": { "$ref": "common.schema.json#/$defs/pin" },
+          "active_high": { "type": "boolean" }
+        }
+      }
+    },
+    "pads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "net", "x_mm", "y_mm", "kind"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 12 },
+          "net": { "type": "string", "minLength": 1 },
+          "x_mm": { "type": "number" },
+          "y_mm": { "type": "number" },
+          "kind": { "enum": ["motor", "power", "uart", "usb", "i2c", "spi", "gpio"] }
+        }
+      }
+    }
+  }
+}

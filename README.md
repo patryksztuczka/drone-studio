@@ -1,72 +1,72 @@
-<p align="center">
-  <img src="apps/web/src/assets/beaver-animated.svg?v=9451bd7e" width="220" alt="The drone-studio beaver: a beaver in an orange hard hat carrying a stack of logs on its shoulder">
-</p>
-
-<h1 align="center">drone-studio</h1>
+<h1 align="center">Drone Studio</h1>
 
 <p align="center">
-  <strong>Mistakes stop at the dam. </strong><br>
-  A starter that helps coding agents write good code and keep your project in shape.
+  <strong>A digital-twin workbench for the <code>palm_x4_2in</code> micro quad.</strong><br>
+  One hardware source of truth, a deterministic simulator, one flight core from SITL to the STM32, and every step drivable by an AI agent.
 </p>
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
-  <a href=".agents/skills/keep-or-cut/SKILL.md">Keep or cut</a> ·
   <a href="AGENTS.md">AGENTS.md</a> ·
-  <a href="docs/README.md">Docs</a>
+  <a href="docs/README.md">Docs</a> ·
+  <a href="docs/vision/drone-studio-m0-m1-blueprint.md">Blueprint</a>
 </p>
 
-## Why a beaver
+## What it is
 
-A beaver does not ask the river to behave; it builds a dam that holds. This starter works the same way. Every rule that a tool can check is a lint rule, a type, an Effect diagnostic, a hook or a CI step, so a mistake fails `pnpm verify` on your machine instead of waiting for a reviewer. Whatever no tool can check is written down once, short, in [AGENTS.md](AGENTS.md).
+- **One source of truth.** The components, the board, the airframe and the flight scenarios are YAML manifests in `hardware/`. `drone codegen` generates the firmware configuration, the simulator model, the Renode platform and the Studio's board view from them.
+- **Deterministic SITL.** A 6DOF simulator steps in lockstep with the flight controller from a seed, so the same scenario and seed always record the same run in `runs/`.
+- **One flight core everywhere.** The `no_std` flight core runs unchanged in SITL, on an emulated STM32H7 in Renode, and on the real board.
+- **Agents first.** The `drone` CLI (`--json`) and the `drone-mcp` server expose validation, codegen, simulation, analysis, diffs and the Renode smoke test, so an agent works the way a person does.
+- **A thin Studio.** Drone Studio is an Electron app whose React renderer talks to the local `drone-engine` sidecar over WebSocket JSON-RPC. It shows and steers; the physics and the flight logic stay in Rust.
 
-It ships a working product, not a hello world: a todo list behind sign-in, where each operation is one contract served over HttpApi, Effect RPC and MCP, stored in Postgres, tested against a real database, and a welcome page with the beaver. Each piece shows how that layer is meant to be written, and each one can be cut (see [Keep or cut](.agents/skills/keep-or-cut/SKILL.md#6-keep-or-cut)).
+The [blueprint](docs/vision/drone-studio-m0-m1-blueprint.md) (in Polish) lays out the drone, the architecture and the M0 and M1 milestones. Root ADR 0016 records why there is no server, database or sign-in.
 
 ## Stack
 
-- **Effect 4.0.7** on every server surface: `HttpApi`, RPC, CLI, SQL, Schema, Config. Pinned below 4.1.0 because Alchemy 2.0.0-beta.84 needs `effect/Crypto`.
-- **A Node server in a container** for the api and the static SPA, one process on one origin. Cloudflare Workers is the alternative host.
-- **Any Postgres**: yours in production, Docker locally, Testcontainers in tests.
-- **Alchemy 2** (beta): the infrastructure is an Effect program in `apps/infra/alchemy.run.ts`.
-- **better-auth** for sign-in, wired through `@alchemy.run/better-auth`.
-- **React 19** with React Router, Effect atoms for data (shared with the mobile app), React Hook Form (validated by the same Effect Schemas the api decodes), Tailwind 4, shadcn components and Paraglide for UI strings (English; add a locale in `apps/web/project.inlang`).
+- **Rust 1.99.0**, pinned in `rust-toolchain.toml` with rustfmt, clippy and the `thumbv7em-none-eabihf` target, for the crates in `crates/` and the firmware in `firmware/`.
+- **Electron 45** for the desktop shell in `apps/desktop`, its main process an Effect 4.0.7 program.
+- **React 19** with Tailwind 4 and the React Compiler for the Studio renderer in `apps/web`.
 - **Vite+ 1.4.0** (`vp`): dev server, build, Vitest, oxlint, oxfmt, task runner and Git hooks.
 - **TypeScript 7** with Effect diagnostics, **pnpm 11**, **Node 26**.
 
 ## Quickstart
 
-```sh
-pnpm install
-pnpm dev
-```
-
-[Local development](docs/operations/development.md) covers what to install first, the demo user, ports, mail, environment variables and social sign-in.
-
-## Deploy
+You need Node 26 with pnpm 11, and [rustup](https://rustup.rs). rustup installs the toolchain `rust-toolchain.toml` names the first time `cargo` runs here.
 
 ```sh
-pnpm build
-pnpm run deploy      # alchemy deploy; plain `pnpm deploy` is a pnpm built-in
+pnpm install         # dependencies and the Git hooks
+pnpm verify          # every check CI runs, cargo fmt, clippy and test included
+pnpm dev:desktop     # the Studio window on this checkout's web dev server
 ```
 
-One Alchemy stack builds the api image and runs it on a Docker host, this machine or a server over SSH, against a Postgres you bring. Point `DATABASE_URL` at the database and add a mail transport first. [Deploy](docs/operations/deploy.md) covers that and the Cloudflare host.
+[Local development](docs/operations/development.md) covers ports, the environment and bundle mode.
 
-## Make it yours
+## Fly it
 
-Create a repository from the template and ask your agent for the first thing you want built. `AGENTS.md` sends it to the [`keep-or-cut` skill](.agents/skills/keep-or-cut/SKILL.md) first. The agent asks what you are building, explains each part, whether the api should speak HttpApi, RPC or both, and where it will run. It renames the project, cuts the parts you will not use (the web, desktop or mobile app, todos, auth, RPC, MCP, the CLI, i18n), and applies the GitHub settings. Not sure yet what you need? Then it only renames the project and cuts nothing. Then it adds an "Origin" section to the README naming the template commit you started from, deletes the skill, and goes on with your request.
+```sh
+cargo run -q --release -p drone-cli -- sim suite            # five baseline scenarios in SITL, under two seconds
+cargo run -q --release -p drone-cli -- analyze latest --anomalies
+cargo run -q --release -p drone-cli -- emu smoke            # the real STM32H743 firmware booted in Renode (Docker)
+pnpm dev:desktop                                            # Drone Studio, with drone-engine started for you
+```
 
-A part you cut can come back later: the skill at that template commit lists every file and line the part touches. Without an agent, follow the skill by hand.
+The [flight lab guide](docs/user/flight-lab.md) covers tuning, diffs and the MCP tools; the [Studio guide](docs/user/studio.md) covers the desktop app.
 
 ## Thanks
 
-drone-studio is my own starter, grown one need at a time, and it borrows from people who got there first:
+Drone Studio's tooling comes from the boberstack template, which borrows from people who got there first:
 
-- [rat-stack](https://github.com/joelhooks/rat-stack) by Joel Hooks: the biggest inspiration for drone-studio. See [`UPSTREAM.md`](UPSTREAM.md).
+- [rat-stack](https://github.com/joelhooks/rat-stack) by Joel Hooks. See [`UPSTREAM.md`](UPSTREAM.md).
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan: the principle, playbook and review skills in `.agents/skills/` started there. See [`.agents/skills/UPSTREAM.md`](.agents/skills/UPSTREAM.md).
 - [anti-slop](https://github.com/dmmulroy/anti-slop) by Dillon Mulroy: the `anti-slop` lint rules. See [`tools/oxlint/anti-slop/UPSTREAM.md`](tools/oxlint/anti-slop/UPSTREAM.md).
-
-Thank you for publishing them.
 
 ## License
 
 Add your own before you publish.
+
+## Origin
+
+This project started from the template at https://github.com/patryksztuczka/boberstack, commit [`37fc3b3db632fe190e8e5311ecb1a1de37fa3bee`](https://github.com/patryksztuczka/boberstack/tree/37fc3b3db632fe190e8e5311ecb1a1de37fa3bee), on 2026-11-27.
+
+Setup cut the mobile app, the api server, the Node CLI, the Alchemy, Docker and Cloudflare deploy, Postgres and the database package, Mailpit and the mail package, better-auth, MCP, RPC and HttpApi with the contract and capability packages, `packages/core` and `packages/client-runtime`, i18n, the todos example, the welcome page and the beaver. It kept the web app, reduced to the Studio renderer, the desktop app and `packages/ui`. To cut a part later or bring one back, read its section in the template's [keep-or-cut skill](https://github.com/patryksztuczka/boberstack/blob/37fc3b3db632fe190e8e5311ecb1a1de37fa3bee/.agents/skills/keep-or-cut/SKILL.md): it lists every file and line the part touches. To bring a part back, copy those from the template, then compare with the template's latest `master` for newer versions.

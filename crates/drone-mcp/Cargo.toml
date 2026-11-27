@@ -1,0 +1,17 @@
+[package]
+name = "drone-mcp"
+description = "Model Context Protocol server (stdio) that lets AI agents run, inspect and compare Drone Studio flights."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+drone-cli = { path = "../drone-cli" }
+drone-runner.workspace = true
+drone-telemetry.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

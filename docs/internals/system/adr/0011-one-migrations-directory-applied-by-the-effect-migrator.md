@@ -1,6 +1,6 @@
 # One migrations directory, applied by the Effect migrator everywhere
 
-**Status:** accepted, 2026-11-08.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 A schema changes in production, locally and in every test database. Two migration runners, such as a database vendor's at deploy and another one in tests, would keep two bookkeeping tables that can disagree about what a database has.
 

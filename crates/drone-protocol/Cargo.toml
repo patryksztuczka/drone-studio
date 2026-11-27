@@ -1,0 +1,20 @@
+[package]
+name = "drone-protocol"
+description = "no_std wire protocol shared by firmware, simulator, engine and Studio: postcard messages in COBS frames with CRC."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["std"]
+alloc = ["postcard/alloc", "serde/alloc"]
+std = ["alloc", "serde/std"]
+
+[dependencies]
+crc.workspace = true
+postcard.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,76 @@
+kind: board
+id: ref_h743_aio
+name: Reference STM32H743 AIO 25.5 x 25.5
+mcu: stm32h743vi
+mass_g: 5.2
+size_mm: [25.5, 25.5]
+thickness_mm: 1.2
+hse_hz: 8000000
+mounting_holes_mm:
+  - [-10.0, -10.0]
+  - [10.0, -10.0]
+  - [10.0, 10.0]
+  - [-10.0, 10.0]
+buses:
+  - id: spi1
+    kind: spi
+    peripheral: spi1
+    frequency_hz: 24000000
+    pins: { sck: PA5, miso: PA6, mosi: PD7 }
+  - id: i2c2
+    kind: i2c
+    peripheral: i2c2
+    frequency_hz: 400000
+    pins: { scl: PB10, sda: PB11 }
+  - id: serial_rx
+    kind: uart
+    peripheral: usart1
+    frequency_hz: 420000
+    pins: { tx: PA9, rx: PA10 }
+  - id: telemetry
+    kind: uart
+    peripheral: usart2
+    frequency_hz: 921600
+    pins: { tx: PD5, rx: PD6 }
+devices:
+  - id: imu0
+    component: icm42688p
+    bus: spi1
+    chip_select: PC15
+    interrupt: PB2
+    orientation: cw90
+    position_mm: [1.5, -2.0, 0.6]
+  - id: baro0
+    component: bmp390
+    bus: i2c2
+    address: 0x76
+    position_mm: [-6.0, 7.0, 0.6]
+motor_outputs:
+  - { id: m1, timer: tim3, channel: 3, pin: PB0 }
+  - { id: m2, timer: tim3, channel: 4, pin: PB1 }
+  - { id: m3, timer: tim5, channel: 1, pin: PA0 }
+  - { id: m4, timer: tim5, channel: 2, pin: PA1 }
+motor_protocol:
+  kind: pwm
+  frequency_hz: 8000
+analog:
+  vbat: { pin: PC0, adc: adc1, channel: 10, divider_ratio: 11.0 }
+  current: { pin: PC1, adc: adc1, channel: 11, scale_mv_per_a: 40.0, offset_mv: 0.0 }
+  adc_reference_v: 3.3
+  adc_bits: 16
+leds:
+  - { id: status, pin: PE3, active_high: true }
+pads:
+  - { id: m1, label: M1, net: PB0, x_mm: 10.5, y_mm: 10.5, kind: motor }
+  - { id: m2, label: M2, net: PB1, x_mm: -10.5, y_mm: 10.5, kind: motor }
+  - { id: m3, label: M3, net: PA0, x_mm: -10.5, y_mm: -10.5, kind: motor }
+  - { id: m4, label: M4, net: PA1, x_mm: 10.5, y_mm: -10.5, kind: motor }
+  - { id: bat_p, label: BAT+, net: VBAT, x_mm: -2.5, y_mm: -11.5, kind: power }
+  - { id: bat_n, label: GND, net: GND, x_mm: 2.5, y_mm: -11.5, kind: power }
+  - { id: rx_tx, label: TX1, net: PA9, x_mm: 11.5, y_mm: -3.0, kind: uart }
+  - { id: rx_rx, label: RX1, net: PA10, x_mm: 11.5, y_mm: -1.0, kind: uart }
+  - { id: tel_tx, label: TX2, net: PD5, x_mm: 11.5, y_mm: 1.0, kind: uart }
+  - { id: tel_rx, label: RX2, net: PD6, x_mm: 11.5, y_mm: 3.0, kind: uart }
+  - { id: v5, label: 5V, net: V5, x_mm: -11.5, y_mm: -1.0, kind: power }
+  - { id: gnd2, label: GND, net: GND, x_mm: -11.5, y_mm: 1.0, kind: power }
+  - { id: usb, label: USB, net: USB_OTG_FS, x_mm: 0.0, y_mm: 11.8, kind: usb }

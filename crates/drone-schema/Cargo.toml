@@ -1,0 +1,19 @@
+[package]
+name = "drone-schema"
+description = "Hardware digital twin manifests: YAML parser, JSON Schema and cross-reference validator, resolver and code generators."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+drone-sim.workspace = true
+jsonschema.workspace = true
+serde = { workspace = true, features = ["std"] }
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

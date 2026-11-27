@@ -2,20 +2,17 @@
 
 An entry point is a file that starts the Effect runtime for a host: a server process, a Worker, a browser tab, a deploy. It is where the layer graph meets the outside world, and nothing imports it. Everything else is library code that exports Effects and Layers.
 
-| Host              | Entry point                                                 | Runs                                                                                                     |
-| ----------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Node server       | `apps/api/src/server.ts`                                    | the api: HttpApi + RPC + MCP + better-auth, and the built SPA from `WEB_ROOT`, via `NodeRuntime.runMain` |
-| Cloudflare Worker | `apps/infra/src/worker.ts`                                  | the same api on the alternative host, and the built SPA as static assets                                 |
-| Node process      | `apps/cli/src/main.ts`                                      | `cli db migrate`, `cli openapi`, `cli health` via `NodeRuntime.runMain`                                  |
-| Electron main     | `apps/desktop/src/main.ts`                                  | the desktop window around the web app via `NodeRuntime.runMain` (root ADR 0008)                          |
-| Browser, phone    | `apps/web/src/runtime.ts`, `apps/mobile/src/runtime.ts`     | the client layer the shared atoms run on, seeded into the app's `AtomRegistry`                           |
-| Deploy            | `apps/infra/alchemy.run.ts`, `apps/infra/cloudflare.run.ts` | the Alchemy stacks: the api image and container, or Hyperdrive and the api Worker                        |
+| Host          | Entry point                | Runs                                                                           |
+| ------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| Electron main | `apps/desktop/src/main.ts` | the Studio window around the web app via `NodeRuntime.runMain` (root ADR 0016) |
+
+The template's api server, Worker, Node CLI, mobile app and Alchemy stacks are gone (root ADR 0016); the sections below that name them describe how a server is built here if one comes back.
 
 ## Rules
 
 ### runtime.allowlist: only entry points start runtimes
 
-`Effect.runPromise`, `runSync`, `runFork`, `runCallback`, `NodeRuntime.runMain` and `ManagedRuntime.make` appear only in `server.ts`, `apps/cli/src/main.ts`, `apps/desktop/src/main.ts` and Vitest global setup files (`@drone-studio/effect/run-only-in-entry-points`). The Worker and the Alchemy stacks start none: Alchemy runs them. Adding an entry point is a change to the rule's `allow` list in `tools/oxlint/lint.config.ts`, which needs owner sign-off. The web and mobile apps start no runtime of their own: atoms run their fibers on `clientRuntime` ([`runtime.web`](#runtimeweb-atoms-for-react)).
+`Effect.runPromise`, `runSync`, `runFork`, `runCallback`, `NodeRuntime.runMain` and `ManagedRuntime.make` appear only in `apps/desktop/src/main.ts` and Vitest global setup files (`@drone-studio/effect/run-only-in-entry-points`). Adding an entry point is a change to the rule's `allow` list in `tools/oxlint/lint.config.ts`, which needs owner sign-off. The web app starts no runtime of its own.
 
 Route and handler modules never run effects. They export layers, and the entry point merges them.
 

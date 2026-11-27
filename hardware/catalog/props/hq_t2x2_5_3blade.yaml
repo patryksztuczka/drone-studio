@@ -1,0 +1,10 @@
+kind: prop
+id: hq_t2x2_5_3blade
+name: HQ T2x2.5 tri-blade
+diameter_mm: 51
+pitch_in: 2.5
+blades: 3
+mass_g: 0.7
+thrust_coefficient: 0.21
+torque_coefficient: 0.023
+rotor_drag_coefficient: 0.048

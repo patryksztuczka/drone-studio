@@ -1,0 +1,27 @@
+kind: scenario
+id: 01_hover_calm
+name: Hover in calm air
+description: Arm on the floor, climb to about one metre in altitude hold and hover in still air.
+tags: [baseline, hover]
+airframe: palm_x4_2in
+duration_s: 10
+seed: 1
+environment:
+  altitude_asl_m: 120
+  temperature_c: 20
+  turbulence: none
+initial:
+  position_m: [0, 0, 0]
+  battery_soc: 0.95
+pilot:
+  - { t: 0.5, arm: true, mode: althold, throttle: 0.5 }
+  - { t: 1.0, throttle: 0.85 }
+  - { t: 2.4, throttle: 0.5 }
+assertions:
+  - { kind: armed_at, t: 0.6 }
+  - { kind: altitude_within, window: [4, 10], min: 0.6, max: 1.6 }
+  - { kind: max_tilt_deg, window: [1, 10], max: 5 }
+  - { kind: attitude_error_rms_deg, window: [4, 10], max: 1.0 }
+  - { kind: horizontal_speed_max_mps, window: [4, 10], max: 0.3 }
+  - { kind: max_motor_saturation_pct, window: [1, 10], max: 0 }
+  - { kind: no_failsafe }

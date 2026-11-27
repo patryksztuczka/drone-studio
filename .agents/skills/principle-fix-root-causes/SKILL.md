@@ -10,9 +10,9 @@ The symptom is where a wrong state became visible. The root cause is the first p
 
 ## How
 
-1. Reproduce first, on the surface where the bug shows: the app through the `verify-web` skill, the CLI through `pnpm cli`, the api with a request. A unit test proves a branch, not that the bug is gone.
+1. Reproduce first, on the surface where the bug shows: the Studio through the `verify-web` skill, the Rust workspace through the `drone` CLI. A unit test proves a branch, not that the bug is gone.
 2. Ask "why" at each step until the answer is a wrong decision in the code, not a consequence of an earlier one.
-3. When stuck, look at the real state: the span and log fields (`obs.logs`), the row in Postgres, the decoded value. Do not guess.
+3. When stuck, look at the real state: the span and log fields (`obs.logs`), the recorded run in `runs/`, the decoded value. Do not guess.
 4. Decide whether the state that triggered the symptom is legitimate.
    - It is: the code that broke on it is the root cause, and handling the state there is the fix.
    - It is not: find what produced it. A check where it broke only hides the bug.

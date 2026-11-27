@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/frame.schema.json",
+  "title": "Frame",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "name", "material", "mass_g", "wheelbase_mm", "size_mm"],
+  "properties": {
+    "kind": { "const": "frame" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "material": { "enum": ["petg", "pla", "nylon", "carbon"] },
+    "mass_g": { "type": "number", "exclusiveMinimum": 0, "maximum": 2000 },
+    "wheelbase_mm": { "type": "number", "minimum": 40, "maximum": 1500 },
+    "size_mm": { "$ref": "common.schema.json#/$defs/vec3" }
+  }
+}

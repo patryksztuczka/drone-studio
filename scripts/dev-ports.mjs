@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { realpathSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const FIRST_PORT = 20_000;
@@ -11,31 +11,16 @@ const SLOTS = 1_000;
 
 export const PORT_VARIABLES = {
   web: "DEV_WEB_PORT",
-  api: "DEV_API_PORT",
-  postgres: "DEV_POSTGRES_PORT",
-  mailpit: "DEV_MAILPIT_PORT",
-  metro: "DEV_METRO_PORT",
+  engine: "DEV_ENGINE_PORT",
 };
 
-const OFFSETS = { web: 0, api: 1, postgres: 2, mailpit: 3, metro: 4 };
-
-export const DATABASE_NAME = "app";
+const OFFSETS = { web: 0, engine: 1 };
 
 export const repositoryRoot = () => realpathSync(fileURLToPath(new URL("..", import.meta.url)));
 
 const rootHash = (root) => createHash("sha256").update(resolve(root)).digest("hex");
 
 const slotOf = (root) => Number.parseInt(rootHash(root).slice(0, 8), 16) % SLOTS;
-
-function composeProjectName(root) {
-  const readable = basename(resolve(root))
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9_-]+/g, "-")
-    .slice(0, 40)
-    .replaceAll(/^[-_]+|[-_]+$/g, "");
-
-  return `${readable === "" ? "dev" : readable}-${rootHash(root).slice(0, 8)}`;
-}
 
 function parsePort(name, value) {
   const port = Number(value);
@@ -65,31 +50,16 @@ function devPorts(root, environment) {
 
 export function devEnvironment(root, environment) {
   const ports = devPorts(root, environment);
-  const databaseUrl = `postgres://postgres:postgres@localhost:${String(ports.postgres)}/${DATABASE_NAME}`;
 
   return {
     ports,
-    composeProject: composeProjectName(root),
     urls: {
       web: `http://localhost:${String(ports.web)}`,
-      api: `http://localhost:${String(ports.api)}`,
-      database: databaseUrl,
-      mailpit: `http://localhost:${String(ports.mailpit)}`,
+      engine: `ws://127.0.0.1:${String(ports.engine)}`,
     },
     variables: {
       [PORT_VARIABLES.web]: String(ports.web),
-      [PORT_VARIABLES.api]: String(ports.api),
-      [PORT_VARIABLES.postgres]: String(ports.postgres),
-      [PORT_VARIABLES.mailpit]: String(ports.mailpit),
-      [PORT_VARIABLES.metro]: String(ports.metro),
-      COMPOSE_PROJECT_NAME: composeProjectName(root),
-      PORT: String(ports.api),
-      DATABASE_URL: databaseUrl,
-      AUTH_SECRET: "local-development-secret-never-deployed",
-      AUTH_BASE_URL: `http://localhost:${String(ports.web)}`,
-      AUTH_TRUSTED_ORIGINS: `http://localhost:${String(ports.api)}`,
-      MAIL_TRANSPORT: "mailpit",
-      MAILPIT_URL: `http://localhost:${String(ports.mailpit)}`,
+      VITE_DRONE_ENGINE_URL: `ws://127.0.0.1:${String(ports.engine)}`,
     },
   };
 }

@@ -1,6 +1,6 @@
 <!--
 Use a Conventional Commit title in plain language, such as
-"fix(api): refuse a todo title longer than the column allows". A squash merge puts the title on
+"fix(sim): keep the battery voltage from going negative under a long sag". A squash merge puts the title on
 master, and the PR title check accepts only the types in scripts/conventional-commit.mjs.
 Write every section from the final diff, not from the branch's commit history. Solve one
 underlying problem; split independent fixes into their own pull requests.
@@ -16,7 +16,7 @@ expected behavior and how the failure shows up: reproduction steps, the environm
 <!-- How this solves the problem: the behavior it introduces and the tradeoffs a reviewer should
 weigh. If it spans apps, packages or infrastructure, say why each part is needed for the same
 problem. Name the ADR it records or follows. List anything that must happen around the merge:
-a migration, a secret to set in the Alchemy stack, a deploy step. -->
+a regenerated file, a new manifest field, a toolchain bump. -->
 
 ## Verification
 
@@ -24,17 +24,17 @@ a migration, a secret to set in the Alchemy stack, a deploy step. -->
 result, and for a UI change the verify-web evidence (screenshot, log excerpt). Write
 "inconclusive" next to anything you could not run, and say why. "Tests pass" alone is not evidence,
 and pnpm verify does not replace checking the affected behavior. Say whether you ran
-pnpm test:integration. Upload screenshots and recordings with pnpm -s pr-evidence <files> and paste
+pnpm check:rust. Upload screenshots and recordings with pnpm -s pr-evidence <files> and paste
 the Markdown it prints, or drag them into this description. Put screenshots in a table, before on
 the left and after on the right, one row per screen. Never commit them. Show synthetic data
 only. Example:
 
-$ pnpm --filter @drone-studio/api test
-      Tests  6 passed (6)
-$ verify-web: added two todos in a row, both listed -> before/after screenshots below
-$ pnpm test:integration: inconclusive, Docker was not running
+$ cargo test -p drone-sim
+test result: ok. 12 passed; 0 failed
+$ verify-web: Studio page shows the engine status -> before/after screenshots below
+$ drone emu smoke: inconclusive, Docker was not running
 
 | Screen | Before | After |
 | ------ | ------ | ----- |
-| Todos  | ![todos before](…) | ![todos after](…) |
+| Studio | ![studio before](…) | ![studio after](…) |
 -->

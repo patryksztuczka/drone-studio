@@ -1,0 +1,26 @@
+kind: scenario
+id: 04_motor_loss_recovery
+name: Motor degradation recovery
+description: Motor m2 loses 40 percent of its thrust mid-hover; the controller must keep the quad level and in the air.
+tags: [baseline, fault]
+airframe: palm_x4_2in
+duration_s: 10
+seed: 4
+environment:
+  altitude_asl_m: 120
+  temperature_c: 20
+  turbulence: none
+initial:
+  position_m: [0, 0, 0]
+  battery_soc: 0.95
+faults:
+  - { t: 5.0, kind: motor_degradation, motor: m2, thrust_scale: 0.6 }
+pilot:
+  - { t: 0.5, arm: true, mode: althold, throttle: 0.5 }
+  - { t: 1.0, throttle: 0.85 }
+  - { t: 2.4, throttle: 0.5 }
+assertions:
+  - { kind: max_tilt_deg, window: [5, 10], max: 15 }
+  - { kind: attitude_error_rms_deg, window: [6, 10], max: 2.0 }
+  - { kind: altitude_within, window: [5, 10], min: 0.4, max: 1.8 }
+  - { kind: no_failsafe }

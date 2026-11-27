@@ -7,6 +7,7 @@ export default defineConfig({
     entry: ["src/main.ts"],
     format: "cjs",
     platform: "node",
+    define: { "import.meta": "{}" },
     outDir: "dist",
     outExtensions: () => ({ js: ".cjs" }),
     dts: false,

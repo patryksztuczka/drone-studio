@@ -1,0 +1,11 @@
+kind: motor
+id: 1202_5_8000kv
+name: 1202.5 8000KV brushless
+stator_mm: [12.0, 2.5]
+kv_rpm_per_v: 8000
+mass_g: 3.9
+winding_resistance_ohm: 0.30
+no_load_current_a: 0.30
+max_current_a: 7.0
+time_constant_s: 0.025
+shaft_mm: 1.5
