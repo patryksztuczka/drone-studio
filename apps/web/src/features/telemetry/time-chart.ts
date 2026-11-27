@@ -26,11 +26,11 @@ export interface ChartSpec {
 
 const FONT = '10px "Geist Mono Variable", ui-monospace, monospace';
 
-const GRID = "#1b212c";
+const GRID = "#efefef";
 
 const AXIS_SIDES = { bottom: 2, left: 3, right: 1 } as const;
 
-const AXIS = "#4a5466";
+const AXIS = "#9a9a9a";
 
 export const chartAxis = (
   side: "left" | "right" | "bottom",
@@ -52,7 +52,7 @@ export const line = (series: SeriesSpec, fallbackScale: string): uPlot.Series =>
   const plain: uPlot.Series = {
     label: series.label,
     stroke: series.color,
-    width: 1.4,
+    width: 1.3,
     scale: series.scale ?? fallbackScale,
     points: { show: false },
   };
@@ -103,7 +103,7 @@ export class TimeChart {
               const context = chart.ctx;
 
               context.save();
-              context.strokeStyle = "#22d3ee";
+              context.strokeStyle = "#0a6cff";
               context.lineWidth = 1.5 * devicePixelRatio;
               context.beginPath();
               context.moveTo(x, chart.bbox.top);

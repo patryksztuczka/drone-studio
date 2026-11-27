@@ -7,11 +7,13 @@ import { useContext, useEffect, useRef } from "react";
 import {
   activeFlight,
   cursor,
+  focusNotice,
   followLive,
   PlaybackSource,
   playbackSource,
   replayPlaying,
   replayRate,
+  studioModule,
 } from "../../../shared/studio.atoms.ts";
 import { advancePlayback } from "../timeline-math.ts";
 
@@ -60,6 +62,8 @@ export const useStudioFocus = () => {
     registry.set(followLive, false);
     registry.set(replayPlaying, false);
     registry.set(cursor, target.value.t);
+    registry.set(studioModule, "runs");
+    registry.set(focusNotice, Option.some(target.value));
   }, [registry, target]);
 };
 

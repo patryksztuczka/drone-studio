@@ -1,1 +1,1 @@
-export { TelemetryPanel } from "./components/telemetry-panel.tsx";
+export { TelemetryDrawer } from "./components/telemetry-panel.tsx";

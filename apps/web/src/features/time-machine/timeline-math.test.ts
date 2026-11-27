@@ -77,6 +77,35 @@ describe("timeline math", () => {
   });
 });
 
+describe("mergeBands", () => {
+  it("joins flickering saturation into one band with one marker and keeps far apart gusts", () => {
+    const markers = timelineMarkers(
+      [
+        { t: 2, kind: "SATURATION" },
+        { t: 2.2, kind: "SATURATION_END" },
+        { t: 2.5, kind: "SATURATION" },
+        { t: 2.6, kind: "SATURATION_END" },
+        { t: 3, kind: "GUST_START" },
+        { t: 3.5, kind: "GUST_END" },
+        { t: 3.3, kind: "SATURATION" },
+        { t: 6, kind: "GUST_START" },
+      ],
+      8,
+    );
+
+    expect(markers.bands).toEqual([
+      { kind: "SATURATION", start: 2, end: 8 },
+      { kind: "GUST_START", start: 3, end: 3.5 },
+      { kind: "GUST_START", start: 6, end: 8 },
+    ]);
+    expect(markers.points.map((event) => `${event.kind}@${String(event.t)}`)).toEqual([
+      "SATURATION@2",
+      "GUST_START@3",
+      "GUST_START@6",
+    ]);
+  });
+});
+
 describe("liveSpanEnd", () => {
   it("shows a short scenario whole and lets a long manual session grow with the flight", () => {
     expect(liveSpanEnd(3, 12)).toBe(12);

@@ -1,4 +1,4 @@
-export type EventTone = "arm" | "gust" | "warn" | "danger" | "info" | "fault";
+export type EventTone = "arm" | "gust" | "warn" | "danger" | "fault" | "info";
 
 const TONES: ReadonlyMap<string, EventTone> = new Map([
   ["ARM", "arm"],
@@ -7,8 +7,8 @@ const TONES: ReadonlyMap<string, EventTone> = new Map([
   ["LANDED", "arm"],
   ["GUST_START", "gust"],
   ["GUST_END", "gust"],
-  ["SATURATION", "warn"],
-  ["SATURATION_END", "warn"],
+  ["SATURATION", "danger"],
+  ["SATURATION_END", "danger"],
   ["BATTERY_WARNING", "warn"],
   ["ARM_REJECTED", "warn"],
   ["RC_LOST", "danger"],
@@ -22,16 +22,20 @@ const TONES: ReadonlyMap<string, EventTone> = new Map([
 
 export const eventTone = (kind: string): EventTone => TONES.get(kind) ?? "info";
 
-const COLORS: Readonly<Record<EventTone, string>> = {
-  arm: "#22d3ee",
-  gust: "#7dd3fc",
-  warn: "#f5a524",
-  danger: "#f05252",
-  fault: "#f472b6",
-  info: "#7b8698",
+export type PillTone = "neutral" | "fail" | "emu";
+
+const PILLS: Readonly<Record<EventTone, PillTone>> = {
+  arm: "neutral",
+  gust: "neutral",
+  info: "neutral",
+  warn: "emu",
+  danger: "fail",
+  fault: "fail",
 };
 
-export const eventColor = (kind: string) => COLORS[eventTone(kind)];
+export const eventPillTone = (kind: string): PillTone => PILLS[eventTone(kind)];
+
+export const eventLabel = (kind: string) => kind.replace("_START", "");
 
 const MARKED: ReadonlySet<EventTone> = new Set(["arm", "gust", "warn", "danger", "fault"]);
 

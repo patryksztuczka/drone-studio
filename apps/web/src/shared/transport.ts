@@ -29,6 +29,7 @@ export const SPEEDS = [0.1, 0.25, 0.5, 1, 2, 4] as const;
 
 export interface Transport {
   readonly live: boolean;
+  readonly hasLiveSession: boolean;
   readonly playing: boolean;
   readonly speed: number;
   readonly toggle: () => void;
@@ -96,6 +97,7 @@ export const useTransport = (): Transport => {
 
   return {
     live,
+    hasLiveSession: Option.exists(session, (status) => !status.finished),
     playing: live ? sessionRunning : replaying,
     speed: live
       ? Option.match(session, { onNone: () => chosenLiveSpeed, onSome: (s) => s.speed })

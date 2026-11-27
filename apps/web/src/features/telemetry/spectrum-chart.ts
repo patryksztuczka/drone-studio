@@ -21,8 +21,8 @@ export class SpectrumChart {
         scales: { x: { time: false, auto: false, range: [0, 250] }, y: { auto: true } },
         series: [
           {},
-          line({ column: "accel_z", label: "accel z", color: "#22d3ee" }, "y"),
-          line({ column: "gyro_x", label: "gyro x", color: "#f472b6" }, "y"),
+          line({ column: "accel_z", label: "accel z", color: "#0a6cff" }, "y"),
+          line({ column: "gyro_x", label: "gyro x", color: "#111111" }, "y"),
         ],
         axes: [chartAxis("bottom", "x", "Hz"), chartAxis("left", "y", "dB")],
       },
