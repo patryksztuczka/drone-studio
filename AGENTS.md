@@ -40,27 +40,27 @@ It optimises for a codebase an agent can extend without making it worse. Every r
 
 ## Commands
 
-| Command                            | Does                                                                                                                                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install`                     | installs; `prepare` runs `vp config`, which installs the Git hooks                                                                                                               |
-| `pnpm dev`                         | `vp dev` for the web app, the Studio renderer. The port is per checkout (below)                                                                                                  |
-| `pnpm dev:desktop`                 | builds `apps/desktop` and opens it on this checkout's web dev server, starting one when none runs, with its own user data in `.dev/desktop`; arguments after `--` go to Electron |
-| `pnpm dev:status`, `pnpm dev:stop` | show or stop the dev server of this checkout                                                                                                                                     |
-| `pnpm check`                       | `vp check`: oxfmt and oxlint, type-aware                                                                                                                                         |
-| `pnpm typecheck`                   | TypeScript 7 with Effect diagnostics                                                                                                                                             |
-| `pnpm test`                        | unit tests in every package                                                                                                                                                      |
-| `pnpm check:rust`                  | `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test` over the Rust workspace                                                                                         |
-| `pnpm build`                       | builds every package                                                                                                                                                             |
-| `pnpm verify`                      | check, `env:check`, the dependency, pin, knip and suppression checks, typecheck, test, `check:rust` and build: the same steps as CI. The pre-push hook runs it                   |
-| `pnpm check:deps`                  | fails on a dependency that is not an exact version or an action not pinned by SHA                                                                                                |
-| `pnpm check:doc-pins`              | fails when a document names a version the workspace does not install                                                                                                             |
-| `pnpm check:knip`                  | fails on unused files, exports and dependencies                                                                                                                                  |
-| `pnpm check:web-boot`              | opens the built `apps/web/dist` in Chrome through agent-browser; fails when the page does not mount or logs an error                                                             |
-| `pnpm env:check`                   | `varlock load`: validates the environment, `.env.local` included, against `.env.schema`                                                                                          |
-| `pnpm check:suppressions`          | counts lint and type-check suppressions against `suppressions.baseline.json`; reports growth, never fails                                                                        |
-| `pnpm check:changed`               | format, lint, typecheck, unit tests and, when Rust changed, `check:rust`, for the files changed since `master`                                                                   |
-| `pnpm pr-evidence <files>`         | uploads screenshots and recordings to the R2 bucket and prints the Markdown for a pull request ([pr-evidence](docs/operations/pr-evidence.md))                                   |
-| `pnpm sources:fetch`               | clones the pinned sources of Effect and Electron into `.repos/`                                                                                                                  |
+| Command                            | Does                                                                                                                                                                              |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm install`                     | installs; `prepare` runs `vp config`, which installs the Git hooks                                                                                                                |
+| `pnpm dev`                         | `vp dev` for the web app, the Studio renderer. The port is per checkout (below)                                                                                                   |
+| `pnpm dev:desktop`                 | builds `apps/desktop` and opens it on this checkout's web dev server, starting one when none runs; the window starts its own `drone-engine`; `DESKTOP_SMOKE=<png>` runs it hidden |
+| `pnpm dev:status`, `pnpm dev:stop` | show or stop the dev server of this checkout                                                                                                                                      |
+| `pnpm check`                       | `vp check`: oxfmt and oxlint, type-aware                                                                                                                                          |
+| `pnpm typecheck`                   | TypeScript 7 with Effect diagnostics                                                                                                                                              |
+| `pnpm test`                        | unit tests in every package                                                                                                                                                       |
+| `pnpm check:rust`                  | `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test` over the Rust workspace                                                                                          |
+| `pnpm build`                       | builds every package                                                                                                                                                              |
+| `pnpm verify`                      | check, `env:check`, the dependency, pin, knip and suppression checks, typecheck, test, `check:rust` and build: the same steps as CI. The pre-push hook runs it                    |
+| `pnpm check:deps`                  | fails on a dependency that is not an exact version or an action not pinned by SHA                                                                                                 |
+| `pnpm check:doc-pins`              | fails when a document names a version the workspace does not install                                                                                                              |
+| `pnpm check:knip`                  | fails on unused files, exports and dependencies                                                                                                                                   |
+| `pnpm check:web-boot`              | opens the built `apps/web/dist` in Chrome through agent-browser; fails when the page does not mount or logs an error                                                              |
+| `pnpm env:check`                   | `varlock load`: validates the environment, `.env.local` included, against `.env.schema`                                                                                           |
+| `pnpm check:suppressions`          | counts lint and type-check suppressions against `suppressions.baseline.json`; reports growth, never fails                                                                         |
+| `pnpm check:changed`               | format, lint, typecheck, unit tests and, when Rust changed, `check:rust`, for the files changed since `master`                                                                    |
+| `pnpm pr-evidence <files>`         | uploads screenshots and recordings to the R2 bucket and prints the Markdown for a pull request ([pr-evidence](docs/operations/pr-evidence.md))                                    |
+| `pnpm sources:fetch`               | clones the pinned sources of Effect and Electron into `.repos/`                                                                                                                   |
 
 The `drone` CLI in `crates/drone-cli` provides these as it lands; each prints JSON with `--json`:
 

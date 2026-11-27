@@ -6,11 +6,11 @@ You need Node 26.13.0 (`.node-version`), pnpm 11.28.9 and rustup. `rust-toolchai
 
 ```sh
 pnpm install       # also installs the Git hooks
-pnpm dev           # the web app's Vite dev server
+pnpm dev           # the web app's Vite dev server and drone-engine
 pnpm dev:desktop   # the Studio window; starts the web dev server when none runs
 ```
 
-`pnpm dev` prints the URL. Its port comes from a hash of the checkout path, so two worktrees can run side by side. [AGENTS.md](../../AGENTS.md#commands) lists where the state and logs live and the variable that overrides the port. `pnpm dev:status` shows what is running, `pnpm dev:stop` stops it.
+`pnpm dev` builds `drone-engine` with cargo, starts it on the port after the web port and hands its URL to the page as `VITE_DRONE_ENGINE_URL`; `?engine=ws://…` on the page overrides it. It prints both URLs. Its port comes from a hash of the checkout path, so two worktrees can run side by side. [AGENTS.md](../../AGENTS.md#commands) lists where the state and logs live and the variable that overrides the port. `pnpm dev:status` shows what is running, `pnpm dev:stop` stops it.
 
 The Rust workspace builds with plain `cargo`. `pnpm check:rust` runs the format check, clippy with warnings as errors and the tests, the same as CI.
 
@@ -25,9 +25,10 @@ The Rust workspace builds with plain `cargo`. `pnpm check:rust` runs the format 
 ```sh
 pnpm dev:desktop                                      # builds the main process and opens the window on this checkout's Vite server
 pnpm dev:desktop -- --remote-debugging-port=9333      # the same, with DevTools on port 9333 for agent-browser --cdp 9333
+DESKTOP_SMOKE=$PWD/.scratch/desktop.png pnpm dev:desktop  # hidden window: waits for the engine and a rendered frame, writes the PNG, exits 0 or 1
 ```
 
-When `pnpm dev` already runs, the window opens its URL; otherwise `pnpm dev:desktop` starts the dev server and stops it when the window closes. Vite's hot reload works as in a browser. A change to `apps/desktop/src` needs a restart: quit the window and run the command again. Each checkout keeps the window's cache and single-instance lock in `.dev/desktop`, so a second worktree opens its own window.
+The window builds and starts its own `drone-engine` on a free port, passes it to the page as `?engine=`, and stops it when the window quits; `DESKTOP_ENGINE_URL` attaches to a running engine instead. When `pnpm dev` already runs, the window opens its URL; otherwise `pnpm dev:desktop` starts the dev server and stops it when the window closes. Vite's hot reload works as in a browser. A change to `apps/desktop/src` needs a restart: quit the window and run the command again. Each checkout keeps the window's cache and single-instance lock in `.dev/desktop`, so a second worktree opens its own window.
 
 Bundle mode is what a packaged app will do: it serves `apps/web/dist` from disk on its own origin. To try it:
 

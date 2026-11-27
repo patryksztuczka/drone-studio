@@ -10,7 +10,7 @@ Find what you need by who you are.
 
 ## I use the product
 
-Drone Studio has no user-facing feature yet. Each one gets its page in `user/` when it ships.
+- [Drone Studio](user/studio.md): fly a scenario or by hand, X-Ray, the Flight Time Machine, Runs and Ghost Diff, the Hardware inspector
 
 ## I run the project
 
