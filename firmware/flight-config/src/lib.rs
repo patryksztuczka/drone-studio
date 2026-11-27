@@ -43,6 +43,7 @@ pub struct AirframeConstants {
     pub hover_thrust_fraction: f32,
     pub max_thrust_per_rotor_n: f32,
     pub motor_pwm_hz: u32,
+    pub hse_hz: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

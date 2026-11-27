@@ -287,6 +287,7 @@ pub fn constants(r: &Resolved<'_>) -> String {
         "    motor_pwm_hz: {},",
         board.motor_protocol.frequency_hz
     );
+    let _ = writeln!(out, "    hse_hz: {},", board.hse_hz);
     let _ = writeln!(out, "}};\n");
 
     let _ = writeln!(out, "pub const PINS: BoardPins = BoardPins {{");

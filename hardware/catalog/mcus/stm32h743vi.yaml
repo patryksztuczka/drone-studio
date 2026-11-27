@@ -11,6 +11,8 @@ rust_target: thumbv7em-none-eabihf
 embassy_chip: stm32h743vi
 renode:
   platform: platforms/cpus/stm32h743.repl
+  peripherals:
+    - { name: spi1, model: SPI.STM32H7_SPI, address: 0x40013000, rcc: SPI1 }
 peripherals:
   spi: [spi1, spi2, spi3, spi4]
   i2c: [i2c1, i2c2, i2c4]

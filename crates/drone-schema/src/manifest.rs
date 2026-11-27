@@ -24,6 +24,17 @@ pub struct Mcu {
 #[serde(deny_unknown_fields)]
 pub struct McuRenode {
     pub platform: String,
+    #[serde(default)]
+    pub peripherals: Vec<RenodePeripheral>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RenodePeripheral {
+    pub name: String,
+    pub model: String,
+    pub address: u32,
+    pub rcc: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

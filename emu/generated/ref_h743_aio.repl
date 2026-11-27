@@ -3,4 +3,12 @@
 
 using "platforms/cpus/stm32h743.repl"
 
+spi1: SPI.STM32H7_SPI @ {
+        sysbus 0x40013000;
+        rcc RegistrationPeripheralAlias.SPI1
+    }
+
 imu0: Sensors.ICM42688P @ spi1
+
+gpioPortC:
+    15 -> imu0@0
