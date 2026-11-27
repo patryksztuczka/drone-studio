@@ -3,33 +3,34 @@ import { RegistryProvider } from "@effect/atom-react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vite-plus/test";
 
-import { ContextBar } from "./context-bar.tsx";
+import { TopBar } from "./top-bar.tsx";
 
 const unreachable = [[engineLayer, EngineConnection.layerAt("ws://127.0.0.1:9")]] as const;
 
-describe("ContextBar", () => {
-  it("offers the three targets, the transport and manual flight", () => {
+describe("TopBar", () => {
+  it("names the module, the target and the transport", () => {
     render(
       <RegistryProvider initialValues={unreachable}>
-        <ContextBar />
+        <TopBar />
       </RegistryProvider>,
     );
 
-    expect(screen.getByRole("radio", { name: "SIM" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "EMU" })).not.toBeChecked();
-    expect(screen.getByRole("radio", { name: "REAL" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Module: Workbench" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Target: SIM" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Manual flight/ })).toBeInTheDocument();
   });
 
   it("says the engine is offline when nothing answers at its URL", async () => {
     render(
       <RegistryProvider initialValues={unreachable}>
-        <ContextBar />
+        <TopBar />
       </RegistryProvider>,
     );
 
     expect(await screen.findByText("engine offline")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveAttribute("title", "ws://127.0.0.1:9");
+    expect(screen.getByRole("status", { name: "Engine" })).toHaveAttribute(
+      "title",
+      "ws://127.0.0.1:9",
+    );
   });
 });

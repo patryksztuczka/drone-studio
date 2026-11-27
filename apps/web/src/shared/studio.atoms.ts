@@ -50,9 +50,23 @@ export const cameraMode = Atom.make<CameraMode>("follow").pipe(Atom.keepAlive);
 
 export const showcase = Atom.make(false).pipe(Atom.keepAlive);
 
-export type InspectorTab = "hardware" | "telemetry" | "runs";
+export const STUDIO_MODULES = ["workbench", "hardware", "runs", "emulation"] as const;
 
-export const inspectorTab = Atom.make<InspectorTab>("telemetry").pipe(Atom.keepAlive);
+export type StudioModule = (typeof STUDIO_MODULES)[number];
+
+export const studioModule = Atom.make<StudioModule>("workbench").pipe(Atom.keepAlive);
+
+export const telemetryOpen = Atom.make(false).pipe(Atom.keepAlive);
+
+export interface FocusNotice {
+  readonly runId: RunId;
+  readonly t: number;
+  readonly sequence: number;
+}
+
+export const focusNotice = Atom.make<Option.Option<FocusNotice>>(Option.none()).pipe(
+  Atom.keepAlive,
+);
 
 export type StudioMode = "SIM" | "EMU" | "REAL";
 

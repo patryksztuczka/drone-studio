@@ -157,7 +157,7 @@ const openMainWindow = Effect.fn("Desktop.openMainWindow")(function* (
         minHeight: 720,
         icon,
         show: false,
-        backgroundColor: "#0b0e14",
+        backgroundColor: "#fafafa",
         webPreferences: {
           contextIsolation: true,
           sandbox: true,
