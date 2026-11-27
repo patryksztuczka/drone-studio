@@ -10,7 +10,7 @@ Find what you need by who you are.
 
 ## I use the product
 
-Drone Studio has no user-facing feature yet. Each one gets its page in `user/` when it ships.
+- [Flight lab](user/flight-lab.md): fly scenarios, analyse and compare runs from a terminal or an AI agent
 
 ## I run the project
 
@@ -28,6 +28,8 @@ Then the [Context Map](../CONTEXT-MAP.md): it names the bounded contexts, how th
 
 - [System-wide ADRs](internals/system/adr): the monorepo, Effect, comments, and the Rust engine with the Electron Studio that replaced the template's server stack (root ADR 0016). The older ones it supersedes stay for their history
 - [ADR template](internals/adr-template.md)
+- [Engine protocol](internals/studio/engine-protocol.md): the WebSocket contract between the Studio and `drone-engine`
+- [Lockstep](internals/simulation/lockstep.md): how the simulator and the flight controller step together, and the traps behind it
 
 How Effect code is written is in the [`effect-best-practices` skill](../.agents/skills/effect-best-practices/SKILL.md). Code carries no comments except `VENDOR:` notes about defects in software we do not own ([root ADR 0004](internals/system/adr/0004-keep-only-comments-about-other-peoples-defects.md)).
 
