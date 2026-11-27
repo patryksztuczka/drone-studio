@@ -34,7 +34,7 @@ export class WindStreaks {
     this.geometry = new BufferGeometry();
     this.geometry.setAttribute("position", this.positions);
     this.material = new LineBasicMaterial({
-      color: "#0a6cff",
+      color: "#111111",
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -49,7 +49,7 @@ export class WindStreaks {
 
     if (pose === undefined || !this.object.visible) return;
 
-    this.material.opacity = Math.min(speed / 6, 1) * 0.35;
+    this.material.opacity = Math.min(speed / 6, 1) * 0.22;
 
     const [wx, wy, wz] = pose.wind;
     const step = Math.min(dt, 0.05) * 0.03;

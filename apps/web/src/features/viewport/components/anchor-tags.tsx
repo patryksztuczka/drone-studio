@@ -8,7 +8,7 @@ import type { Triple } from "../frames-of-reference.ts";
 
 export interface TagSlot {
   readonly root: HTMLElement;
-  readonly value?: HTMLElement | null;
+  readonly value?: Element | null;
 }
 
 export type TagSlots = Map<string, TagSlot>;
@@ -18,7 +18,7 @@ export interface Anchor {
   readonly object: () => Object3D | null;
   readonly local: Triple;
   readonly value?: () => string;
-  readonly pinned?: boolean;
+  readonly valueClass?: () => string;
 }
 
 interface AnchorTrackerProps {
@@ -51,16 +51,16 @@ export const AnchorTracker = ({ anchors, slots }: AnchorTrackerProps) => {
       const x = ((point.x + 1) / 2) * size.width;
       const y = ((1 - point.y) / 2) * size.height;
       const inside = Math.abs(point.x) <= 1.05 && Math.abs(point.y) <= 1.05;
-      const pinned = anchor.pinned === true;
-      const edge = point.y > 1 ? "↑ " : point.y < -1 ? "↓ " : "";
-      const shownX = pinned ? Math.min(Math.max(x, 24), size.width - 320) : x;
-      const shownY = pinned ? Math.min(Math.max(y, 24), size.height - 24) : y;
 
-      slot.root.style.opacity = inside || pinned ? "1" : "0";
-      slot.root.style.transform = `translate(${shownX.toFixed(1)}px, ${shownY.toFixed(1)}px)`;
+      slot.root.style.opacity = inside ? "1" : "0";
+      slot.root.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
 
-      if (anchor.value !== undefined && slot.value !== undefined && slot.value !== null) {
-        writeText(slot.value, `${pinned ? edge : ""}${anchor.value()}`);
+      const target = slot.value;
+
+      if (target instanceof HTMLElement) {
+        if (anchor.value !== undefined) writeText(target, anchor.value());
+
+        if (anchor.valueClass !== undefined) target.className = anchor.valueClass();
       }
     }
   });

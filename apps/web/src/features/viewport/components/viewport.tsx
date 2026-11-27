@@ -1,6 +1,5 @@
-import { boardLayout } from "@drone-studio/engine-client";
+import { boardLayout, connectionState, ConnectionState } from "@drone-studio/engine-client";
 import type { AirframeId, BoardLayout } from "@drone-studio/engine-client";
-import { cn } from "@drone-studio/ui/lib/utils";
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Option } from "effect";
@@ -10,7 +9,6 @@ import type { ReactNode, RefObject } from "react";
 import type { Group } from "three";
 
 import { writeText } from "../../../shared/dom.ts";
-import { fixed } from "../../../shared/format.ts";
 import {
   activeFlight,
   cameraMode,
@@ -30,6 +28,7 @@ import { CameraRig } from "./camera-rig.tsx";
 import { FlightRig } from "./flight-rig.tsx";
 import { GroundGrid } from "./ground-grid.tsx";
 import { SceneEnvironment } from "./scene-environment.tsx";
+import { ViewportFooter } from "./viewport-footer.tsx";
 import { WindField } from "./wind-field.tsx";
 import { XrayLabelLayer, xrayAnchors } from "./xray-labels.tsx";
 
@@ -73,22 +72,15 @@ const sourceOf = (flight: Option.Option<FlightView>, t: number) =>
     onSome: (view) => ({ table: view.table, t }),
   });
 
-const heightOf = (sampler: PoseSampler) => () => {
-  const pose = sampler.read(Number.NaN);
-
-  return pose === undefined ? "–" : `${fixed(pose.height, 2)} m`;
-};
-
 const bodyIn = (bodies: ReadonlyMap<string, Group>, key: string) => () => bodies.get(key) ?? null;
 
 interface SceneProps {
   readonly layout: BoardLayout;
   readonly slots: TagSlots;
   readonly fps: RefObject<HTMLSpanElement | null>;
-  readonly compare: boolean;
 }
 
-const Scene = ({ layout, slots, fps, compare }: SceneProps) => {
+const Scene = ({ layout, slots, fps }: SceneProps) => {
   const registry = useContext(RegistryContext);
   const mode = useAtomValue(viewMode);
   const camera = useAtomValue(cameraMode);
@@ -117,34 +109,13 @@ const Scene = ({ layout, slots, fps, compare }: SceneProps) => {
   );
 
   const xray = mode === "xray" && !cinematic;
-  const comparing = compare && Option.isSome(ghost);
+  const comparing = Option.isSome(ghost) && !cinematic;
 
-  const anchors = useMemo((): ReadonlyArray<Anchor> => {
-    const tags: Array<Anchor> = [];
-
-    if (xray) tags.push(...xrayAnchors(layout, bodyIn(bodies, "active")));
-
-    if (comparing) {
-      tags.push(
-        {
-          id: "candidate",
-          object: bodyIn(bodies, "active"),
-          local: [0, 0, 0],
-          value: heightOf(active),
-          pinned: true,
-        },
-        {
-          id: "baseline",
-          object: bodyIn(bodies, "ghost"),
-          local: [0, 0, 0],
-          value: heightOf(ghostly),
-          pinned: true,
-        },
-      );
-    }
-
-    return tags;
-  }, [xray, comparing, layout, active, ghostly, bodies]);
+  const anchors = useMemo(
+    (): ReadonlyArray<Anchor> =>
+      xray ? xrayAnchors(layout, bodyIn(bodies, "active"), active) : [],
+    [xray, layout, active, bodies],
+  );
 
   return (
     <>
@@ -164,7 +135,7 @@ const Scene = ({ layout, slots, fps, compare }: SceneProps) => {
           sampler={ghostly}
           tone="ghost"
           showTarget={false}
-          trailColor="#9a9a9a"
+          trailColor="#7c5cff"
           onBody={keep("ghost")}
         />
       ) : null}
@@ -181,43 +152,10 @@ const Scene = ({ layout, slots, fps, compare }: SceneProps) => {
   );
 };
 
-interface DroneTagProps {
-  readonly id: "candidate" | "baseline";
-  readonly slots: TagSlots;
-}
-
-const DroneTag = ({ id, slots }: DroneTagProps) => {
-  const candidate = id === "candidate";
-  const value = useRef<HTMLSpanElement>(null);
-
-  return (
-    <div
-      ref={(element) => {
-        if (element === null) slots.delete(id);
-        else slots.set(id, { root: element, value: value.current });
-      }}
-      className="pointer-events-none absolute top-0 left-0 opacity-0 transition-opacity"
-    >
-      <span
-        className={cn(
-          "absolute left-[150px] flex -translate-y-1/2 items-center gap-2 bg-surface px-2.5 py-[5px] font-label text-[12px] leading-4 whitespace-nowrap",
-          candidate ? "border border-blue" : "border border-dashed border-line-strong",
-        )}
-      >
-        <span className={candidate ? "text-blue" : "text-faint"}>
-          {candidate ? "CANDIDATE" : "BASELINE"}
-        </span>
-        <span ref={value} className={candidate ? "text-ink" : "text-muted"}>
-          –
-        </span>
-      </span>
-    </div>
-  );
-};
-
 interface ViewportProps {
-  readonly compare?: boolean | undefined;
-  readonly children?: ReactNode;
+  readonly overlay?: ReactNode;
+  readonly footerAction?: ReactNode;
+  readonly showFooter?: boolean;
 }
 
 const layoutFor = (airframe: AirframeId | undefined) =>
@@ -225,14 +163,14 @@ const layoutFor = (airframe: AirframeId | undefined) =>
 
 const LoadedViewport = ({
   layout,
-  compare = false,
-  children,
+  overlay,
+  footerAction,
+  showFooter = true,
 }: ViewportProps & { readonly layout: BoardLayout }) => {
   const slots = useMemo<TagSlots>(() => new Map(), []);
   const fps = useRef<HTMLSpanElement>(null);
   const mode = useAtomValue(viewMode);
   const cinematic = useAtomValue(showcase);
-  const ghost = useAtomValue(ghostFlight);
 
   return (
     <div className="relative h-full w-full overflow-hidden" data-testid="viewport">
@@ -243,59 +181,60 @@ const LoadedViewport = ({
         camera={{ zoom: 4000, near: 0.01, far: 60, position: [1.15, 1.16, 1.15] }}
         aria-label={`3D view of ${layout.airframe.name}`}
       >
-        <Scene layout={layout} slots={slots} fps={fps} compare={compare} />
+        <Scene layout={layout} slots={slots} fps={fps} />
       </Canvas>
       {mode === "xray" && !cinematic ? <XrayLabelLayer layout={layout} slots={slots} /> : null}
-      {compare && Option.isSome(ghost) ? (
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-          <DroneTag id="candidate" slots={slots} />
-          <DroneTag id="baseline" slots={slots} />
-        </div>
-      ) : null}
-      <span
-        ref={fps}
-        className="pointer-events-none absolute right-14 bottom-3 font-label text-[10px] text-faint"
-      />
-      {children}
+      {overlay}
+      {showFooter ? (
+        <ViewportFooter fps={fps} action={footerAction} />
+      ) : (
+        <span ref={fps} className="hidden" />
+      )}
     </div>
   );
 };
 
-export const Viewport = ({ compare, children }: ViewportProps) => {
+export const Viewport = (props: ViewportProps) => {
   const airframe = useAtomValue(currentAirframe);
   const layout = layoutFor(airframe);
 
-  if (layout === undefined) return <ViewportPlaceholder>{children}</ViewportPlaceholder>;
+  if (layout === undefined) return <ViewportPlaceholder overlay={props.overlay} />;
 
-  return (
-    <ViewportWithLayout layoutAtom={layout} compare={compare}>
-      {children}
-    </ViewportWithLayout>
-  );
+  return <ViewportWithLayout layoutAtom={layout} {...props} />;
 };
 
 const ViewportWithLayout = ({
   layoutAtom,
-  compare,
-  children,
+  ...props
 }: ViewportProps & { readonly layoutAtom: ReturnType<typeof boardLayout> }) => {
   const result = useAtomValue(layoutAtom);
 
-  if (!AsyncResult.isSuccess(result)) return <ViewportPlaceholder>{children}</ViewportPlaceholder>;
+  if (!AsyncResult.isSuccess(result)) return <ViewportPlaceholder overlay={props.overlay} />;
 
-  return (
-    <LoadedViewport layout={result.value} compare={compare}>
-      {children}
-    </LoadedViewport>
-  );
+  return <LoadedViewport layout={result.value} {...props} />;
 };
 
-const ViewportPlaceholder = ({ children }: ViewportProps) => (
-  <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
-    <div className="flex items-center gap-2">
-      <span className="size-1.5 animate-pulse rounded-[3px] bg-blue" />
-      <p className="font-label text-[12px] text-faint">waiting for drone-engine</p>
+const ViewportPlaceholder = ({ overlay }: { readonly overlay?: ReactNode }) => {
+  const state = useAtomValue(connectionState);
+
+  const url = AsyncResult.isSuccess(state)
+    ? ConnectionState.match(state.value, {
+        Connecting: (connecting) => connecting.url,
+        Connected: (connected) => connected.url,
+        Offline: (offline) => offline.url,
+      })
+    : "";
+
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      <div className="flex w-[400px] flex-col items-center gap-3 text-center">
+        <span className="size-3 animate-pulse rounded-full bg-blue shadow-[0_0_0_8px_#0a6cff1f]" />
+        <p className="text-[16px] leading-5 text-ink">Waiting for drone-engine</p>
+        <p className="font-label text-[11px] leading-[14px] text-faint">
+          {url === "" ? "starting" : `${url} · retrying every 1 s`}
+        </p>
+      </div>
+      {overlay}
     </div>
-    {children}
-  </div>
-);
+  );
+};

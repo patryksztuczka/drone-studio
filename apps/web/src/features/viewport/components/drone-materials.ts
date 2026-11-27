@@ -149,7 +149,7 @@ const faintMaterials = (fill: string, edge: string, strength: number) => {
 export const droneMaterials = (tone: DroneTone): DroneMaterials => {
   if (tone === "xray") return xrayMaterials();
 
-  if (tone === "ghost") return faintMaterials(PALETTE.blueGlass, PALETTE.blue, 1);
+  if (tone === "ghost") return faintMaterials("#c9b8f5", PALETTE.ghost, 1.6);
 
   if (tone === "target") return faintMaterials("#d0d0d0", PALETTE.ink, 0.9);
 

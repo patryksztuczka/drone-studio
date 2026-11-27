@@ -36,7 +36,7 @@ describe("camera framing", () => {
     expect(framing.zoom * (0.2 + DRONE_SPAN_M)).toBeCloseTo(676);
   });
 
-  it("stops zooming out and stays on the candidate when the baseline is metres away", () => {
+  it("keeps the close-up on the candidate when the baseline is metres away", () => {
     const framing = frameAll(
       [
         [0, 5.5, 0],
@@ -47,6 +47,7 @@ describe("camera framing", () => {
     );
 
     expect(framing.centre).toEqual([0, 5.5, 0]);
-    expect(framing.zoom).toBeCloseTo(fitZoom(1440, 676) * FRAMING_FLOOR);
+    expect(framing.zoom).toBeCloseTo(fitZoom(1440, 676));
+    expect(FRAMING_FLOOR).toBeGreaterThan(0);
   });
 });

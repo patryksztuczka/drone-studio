@@ -7,7 +7,7 @@ export const ISOMETRIC_DIRECTION: Triple = [1, 1, 1];
 export const fitZoom = (width: number, height: number) =>
   Math.max(Math.min(width / (DRONE_SPAN_M * 2.1), height / DRONE_SPAN_M), 1);
 
-export const FRAMING_FLOOR = 0.3;
+export const FRAMING_FLOOR = 0.35;
 
 export interface Framing {
   readonly centre: Triple;
@@ -37,7 +37,7 @@ export const frameAll = (points: ReadonlyArray<Triple>, width: number, height: n
 
   const floor = fit * FRAMING_FLOOR;
 
-  if (needed < floor) return { centre: points[0] ?? centre, zoom: floor };
+  if (needed < floor) return { centre: points[0] ?? centre, zoom: fit };
 
   return { centre, zoom: Math.min(fit, needed) };
 };

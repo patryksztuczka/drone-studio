@@ -9,7 +9,7 @@ import {
   ConeGeometry,
   CylinderGeometry,
   Line,
-  LineBasicMaterial,
+  LineDashedMaterial,
   MeshBasicMaterial,
   PlaneGeometry,
   RingGeometry,
@@ -22,6 +22,7 @@ import { PALETTE } from "../../../shared/palette.ts";
 import { frdToScene } from "../frames-of-reference.ts";
 import type { PoseSampler } from "../pose-sampler.ts";
 import { fade, show } from "../scene-mutations.ts";
+import { thrustBand } from "../thrust-band.ts";
 import type { DroneTone } from "./drone-materials.ts";
 import { DroneModel } from "./drone-model.tsx";
 
@@ -31,12 +32,13 @@ const TRAIL_SECONDS = 8;
 
 const THRUST_METRES_PER_NEWTON = 0.085;
 
-const COOL = new Color(PALETTE.blue);
+const BAND_COLORS = {
+  low: new Color(PALETTE.blue),
+  mid: new Color(PALETTE.amber),
+  high: new Color(PALETTE.fail),
+} as const;
 
-const HOT = new Color(PALETTE.fail);
-
-const thrustColor = (command: number, out: Color) =>
-  command < 0.85 ? out.copy(COOL) : out.copy(COOL).lerp(HOT, Math.min((command - 0.85) / 0.1, 1));
+const thrustColor = (command: number, out: Color) => out.copy(BAND_COLORS[thrustBand(command)]);
 
 const shadowTexture = () => {
   const canvas = document.createElement("canvas");
@@ -64,7 +66,7 @@ interface ThrustVectorsProps {
   readonly sampler: PoseSampler;
 }
 
-const fallbackMaterial = new MeshBasicMaterial({ color: COOL });
+const fallbackMaterial = new MeshBasicMaterial({ color: PALETTE.blue });
 
 const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
   const shafts = useRef<Array<Mesh | null>>([]);
@@ -83,7 +85,7 @@ const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
       layout.airframe.rotors.map(
         () =>
           new MeshBasicMaterial({
-            color: COOL,
+            color: PALETTE.blue,
             transparent: true,
             opacity: 1,
             depthWrite: false,
@@ -244,10 +246,13 @@ export const FlightRig = ({
     geometry.setAttribute("position", new BufferAttribute(positions, 3));
     geometry.setAttribute("color", new BufferAttribute(colors, 3));
 
-    const material = new LineBasicMaterial({
+    const material = new LineDashedMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.6,
+      dashSize: 0.0012,
+      gapSize: 0.003,
+      depthWrite: false,
     });
 
     return { geometry, material, line: new Line(geometry, material) };
@@ -338,9 +343,10 @@ export const FlightRig = ({
         });
         attribute.needsUpdate = true;
         trailParts.geometry.computeBoundingSphere();
+        trailParts.line.computeLineDistances();
       }
 
-      show(trailParts.line, xray && points.length === TRAIL_POINTS);
+      show(trailParts.line, tone !== "target" && points.length === TRAIL_POINTS);
     }
   });
 
