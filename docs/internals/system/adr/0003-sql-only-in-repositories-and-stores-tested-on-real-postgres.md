@@ -1,6 +1,6 @@
 # SQL only in repositories, and stores tested on real Postgres
 
-**Status:** accepted, 2026-10-30.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 A domain module that keeps state declares a store port, `XStore` in `x.store.ts`. The SQL behind it lives in one place, `XRepository` in `packages/database/src/x.repository.ts`, and nowhere else. A store has exactly one implementation: there is no in-memory fake and no `layerTest` on a `*Store`. Its contract runs on a real Postgres started by Testcontainers, migrated from the same files production uses.
 

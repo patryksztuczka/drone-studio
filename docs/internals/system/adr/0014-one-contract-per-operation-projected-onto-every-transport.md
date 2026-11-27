@@ -1,6 +1,6 @@
 # One contract per operation, projected onto every transport
 
-**Status:** accepted, 2026-11-13.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 Root ADR 0005 put the `HttpApi` and the `RpcGroup` in `packages/domain` and accepted that an operation is declared once per transport. Root ADR 0012 added MCP as a third. A Todos operation was then written three times in `packages/domain` (an endpoint, an RPC and a tool) and handled three times in `apps/api`, each copy calling the same service method. The copies agreed only because someone kept them in step, and every new transport would have added a fourth.
 

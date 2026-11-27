@@ -1,6 +1,6 @@
 # Send mail through a Mailer port, with Mailpit locally and the project's own production transport
 
-**Status:** accepted, 2026-10-31.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 Sign-up needs a verified email address and a forgotten password needs a reset link, so the api must send mail. Which provider delivers it in production depends on the project: where it is hosted, which domain it sends from, what the team already pays for. The template does not choose one.
 

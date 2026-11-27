@@ -10,19 +10,14 @@ Find what you need by who you are.
 
 ## I use the product
 
-- [Signing in](user/sign-in.md)
-- [Todos](user/todos.md)
-- [Connecting an AI assistant](user/ai-assistants.md)
+Drone Studio has no user-facing feature yet. Each one gets its page in `user/` when it ships.
 
-## I run, deploy or adopt the starter
+## I run the project
 
 The [README](../README.md) has the quickstart. The runbooks:
 
-- [Local development](operations/development.md): the dev stack, ports, mail, environment variables, social sign-in, the desktop app
-- [Mobile app](operations/mobile.md): run the Expo app on a simulator, test ids, drive it with agent-device, variants, EAS builds and updates
-- [Deploy](operations/deploy.md): Alchemy, the container, the Cloudflare alternative, the database and the mail transport
+- [Local development](operations/development.md): the toolchains, the web dev server, ports, environment variables, the desktop app
 - [CI](operations/ci.md): the stages and what each one checks
-- [Keep or cut](../.agents/skills/keep-or-cut/SKILL.md): set up a fresh copy of the template: rename the project, keep or cut each part, apply the GitHub settings. The skill deletes itself when it is done
 - [Pull request evidence](operations/pr-evidence.md): upload screenshots and recordings to R2 and paste them into a pull request
 
 ## I work on this repository
@@ -31,9 +26,7 @@ Start with [AGENTS.md](../AGENTS.md) for the commands, where code goes and the s
 
 Then the [Context Map](../CONTEXT-MAP.md): it names the bounded contexts, how they relate, and links each one's folder under `internals/`. Each folder holds the context's glossary (`GLOSSARY.md`), its decisions (`adr/`) and, once written, one file per module recording the decisions and traps the code does not show.
 
-- [Todos](internals/todos/GLOSSARY.md) and its [ADRs](internals/todos/adr)
-- [Identity](internals/identity/GLOSSARY.md) and its [ADRs](internals/identity/adr)
-- [System-wide ADRs](internals/system/adr): the monorepo, Effect, the container host and Postgres, SQL and tests, comments, migrations, the shared contract, mail, packages, the desktop app, the mobile app, client state in Effect atoms, MCP
+- [System-wide ADRs](internals/system/adr): the monorepo, Effect, comments, and the Rust engine with the Electron Studio that replaced the template's server stack (root ADR 0016). The older ones it supersedes stay for their history
 - [ADR template](internals/adr-template.md)
 
 How Effect code is written is in the [`effect-best-practices` skill](../.agents/skills/effect-best-practices/SKILL.md). Code carries no comments except `VENDOR:` notes about defects in software we do not own ([root ADR 0004](internals/system/adr/0004-keep-only-comments-about-other-peoples-defects.md)).
@@ -53,10 +46,11 @@ Every piece of knowledge has one home, and every other mention links to it. If t
 | A module's decisions and traps the code cannot show | its module file, `internals/<context>/<module>.md`                                    |
 | Why a decision was made and what it cost            | an ADR in `internals/<context>/adr/`, or `internals/system/adr/`                      |
 | How Effect code is written                          | the [`effect-best-practices` skill](../.agents/skills/effect-best-practices/SKILL.md) |
+| What the product is and where it is going           | [`vision/`](vision)                                                                   |
 | Commands, where code goes, what needs sign-off      | [`AGENTS.md`](../AGENTS.md)                                                           |
 | How a user does something with the product          | its feature page, `user/<feature>.md`                                                 |
-| How to run and deploy the starter                   | `operations/`; the [README](../README.md) keeps the quickstart                        |
-| How to keep or cut a part of the starter            | the [`keep-or-cut` skill](../.agents/skills/keep-or-cut/SKILL.md)                     |
+| How to run the project                              | `operations/`; the [README](../README.md) keeps the quickstart                        |
+| Where the project came from and what was cut        | the "Origin" section of the [README](../README.md#origin)                             |
 | What a package is and how to build, run and test it | that package's README, when it needs more than `AGENTS.md` says                       |
 | A workaround for a defect in software we do not own | a `VENDOR:` comment at the workaround                                                 |
 | What the code does, and what a test proves          | the code: its names, types and tests                                                  |
@@ -70,4 +64,4 @@ A page in `user/` helps someone use the product, not build it.
 - Name the button or the settings path the reader needs. Do not describe icons, layouts, animations or every state of the screen.
 - Use the product's voice and the context's glossary words. Leave out code, endpoints, libraries and contributor commands.
 - When the way to use a feature changes, rewrite its section in the same change. A small UI tweak needs no entry, and a new control does not need its own page.
-- Instructions for running or deploying the system go in `operations/`, not here.
+- Instructions for running the system go in `operations/`, not here.

@@ -1,6 +1,6 @@
 # AI assistants can run a program over the capabilities
 
-**Status:** accepted, 2026-11-13.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 Each capability is its own MCP tool (root ADR 0014). An assistant that needs several of them makes one call per turn and reads every result back through its context, and once a product has dozens of capabilities their tool list alone crowds that context. rat-stack's code mode answers both, and we took it: `toCodeMode` in `@drone-studio/capability/code-mode` turns the capability list into two more MCP tools. `search` finds capabilities by intent and returns their TypeScript signatures. `execute` runs a short JavaScript program in which each `tools.<name>(input)` call is checked against that capability's input schema and runs on the api as the same Current User, like a direct tool call.
 

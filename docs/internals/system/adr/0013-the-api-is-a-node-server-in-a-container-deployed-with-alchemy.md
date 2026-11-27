@@ -1,6 +1,6 @@
 # The api is a Node server in a container, deployed with Alchemy
 
-**Status:** accepted, 2026-11-09.
+**Status:** superseded by root ADR 0016, 2026-11-27.
 
 drone-studio is a template, and the people who start from it host on a VPS, on AWS, GCP or Azure, on Fly, or on Cloudflare. A template whose api only runs as a Cloudflare Worker makes that vendor its first decision and the first thing to rip out.
 
