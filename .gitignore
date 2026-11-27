@@ -13,4 +13,4 @@ coverage/
 .dev/
 .repos/
 target/
-runs/
+/runs/

@@ -20,22 +20,31 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #0b0e14;
+  --foreground: #d7dde6;
+  --card: #10141c;
+  --card-foreground: #d7dde6;
+  --primary: #e6ebf2;
+  --primary-foreground: #0b0e14;
+  --secondary: #161b25;
+  --secondary-foreground: #d7dde6;
+  --muted: #161b25;
+  --muted-foreground: #7b8698;
+  --accent: #1a202b;
+  --accent-foreground: #e6ebf2;
+  --destructive: #f05252;
+  --border: #1f2632;
+  --input: #252d3a;
+  --ring: #22d3ee;
+  --panel: #0f131a;
+  --panel-raised: #141923;
+  --hairline: #1b212c;
+  --faint: #4a5466;
+  --sim: #22d3ee;
+  --emu: #f5a524;
+  --real: #10b981;
+  --danger: #f05252;
+  --ghost: #a78bfa;
 }
 
 @theme inline {
@@ -59,4 +68,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-panel: var(--panel);
+  --color-panel-raised: var(--panel-raised);
+  --color-hairline: var(--hairline);
+  --color-faint: var(--faint);
+  --color-sim: var(--sim);
+  --color-emu: var(--emu);
+  --color-real: var(--real);
+  --color-danger: var(--danger);
+  --color-ghost: var(--ghost);
 }

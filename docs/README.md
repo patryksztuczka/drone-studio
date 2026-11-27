@@ -10,6 +10,7 @@ Find what you need by who you are.
 
 ## I use the product
 
+- [Drone Studio](user/studio.md): fly a scenario or by hand, X-Ray, the Flight Time Machine, Runs and Ghost Diff, the Hardware inspector
 - [Flight lab](user/flight-lab.md): fly scenarios, analyse and compare runs from a terminal or an AI agent
 
 ## I run the project

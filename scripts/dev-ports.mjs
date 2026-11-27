@@ -11,9 +11,10 @@ const SLOTS = 1_000;
 
 export const PORT_VARIABLES = {
   web: "DEV_WEB_PORT",
+  engine: "DEV_ENGINE_PORT",
 };
 
-const OFFSETS = { web: 0 };
+const OFFSETS = { web: 0, engine: 1 };
 
 export const repositoryRoot = () => realpathSync(fileURLToPath(new URL("..", import.meta.url)));
 
@@ -54,9 +55,11 @@ export function devEnvironment(root, environment) {
     ports,
     urls: {
       web: `http://localhost:${String(ports.web)}`,
+      engine: `ws://127.0.0.1:${String(ports.engine)}`,
     },
     variables: {
       [PORT_VARIABLES.web]: String(ports.web),
+      VITE_DRONE_ENGINE_URL: `ws://127.0.0.1:${String(ports.engine)}`,
     },
   };
 }
