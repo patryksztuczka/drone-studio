@@ -6,7 +6,7 @@ Oxlint JS plugin (`@drone-studio/effect/<rule>`) that enforces the Effect v4 sty
 - No build step: oxlint loads `index.ts` directly.
 - No type information: rules work on syntax plus import resolution. `Effect`, `Schema`, `Layer` and friends are recognised only when bound by an import from `effect`, `@drone-studio/effect/*` or `@effect/*`, so a local `const Effect = …` is never flagged.
 
-The rules are on at `error` for `apps/api`, `apps/cli`, `apps/desktop`, `apps/infra` and every package under `packages/` (see [`../lint.config.ts`](../lint.config.ts)), so a new adapter package is covered without a config change. Defaults match this starter's layout; the config repeats the path options so they are visible in one place.
+The rules are on at `error` for `apps/desktop` and every package under `packages/` (see [`../lint.config.ts`](../lint.config.ts)), so a new adapter package is covered without a config change. Defaults match this starter's layout; the config repeats the path options so they are visible in one place.
 
 ## Rules
 

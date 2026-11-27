@@ -13,7 +13,7 @@ Branch and commit rules are in the `babysit-git` skill.
 
 ## Title
 
-The title is a Conventional Commit subject: `<type>(<optional-scope>): <what changes and why>`, for example `fix(api): refuse a todo title longer than the column allows`. The type is one of `CONVENTIONAL_TYPES` in [`scripts/conventional-commit.mjs`](../../../scripts/conventional-commit.mjs), and the scope is lower-case words joined by hyphens. A squash merge puts the title on `master`, and the PR title workflow checks it against the same list.
+The title is a Conventional Commit subject: `<type>(<optional-scope>): <what changes and why>`, for example `fix(sim): keep the battery voltage from going negative under a long sag`. The type is one of `CONVENTIONAL_TYPES` in [`scripts/conventional-commit.mjs`](../../../scripts/conventional-commit.mjs), and the scope is lower-case words joined by hyphens. A squash merge puts the title on `master`, and the PR title workflow checks it against the same list.
 
 Write the title from the final diff, the way a commit subject tells a human what changes and why.
 
@@ -28,9 +28,9 @@ Upload the screenshots and recordings the Verification section shows with `pnpm 
 Put screenshots in a table, one row per screen, the `before` shot on the left and the `after` shot on the right, using the Markdown `pr-evidence` prints for each file. A screen that is new has `none` in the Before cell. Recordings go below the table.
 
 ```md
-| Screen | Before                                      | After                                     |
-| ------ | ------------------------------------------- | ----------------------------------------- |
-| Todos  | ![todos before](https://…/todos.before.png) | ![todos after](https://…/todos.after.png) |
+| Screen | Before                                        | After                                       |
+| ------ | --------------------------------------------- | ------------------------------------------- |
+| Studio | ![studio before](https://…/studio.before.png) | ![studio after](https://…/studio.after.png) |
 ```
 
 When `pr-evidence` fails because the bucket does not exist, list the evidence paths under Verification instead, and tell the user once that [`docs/operations/pr-evidence.md`](../../../docs/operations/pr-evidence.md) would put them in the pull request. The user then cannot see the evidence on GitHub, so show every screenshot and recording in your chat reply: images embedded, before next to after for each screen, and recordings by absolute path. Do not run `pr-evidence setup` yourself unless the owner asks: it creates a public bucket on the project's Cloudflare account.

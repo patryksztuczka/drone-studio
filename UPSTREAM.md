@@ -2,7 +2,7 @@
 
 [rat-stack](https://github.com/joelhooks/rat-stack) by Joel Hooks, MIT, is the biggest inspiration for drone-studio. Its license is reproduced below.
 
-Much of the project's shape comes from it: services in `packages/core` with each adapter in its own package, one contract per operation projected onto every transport, code mode for AI assistants, and the `no-comments` lint rule. `packages/capability` keeps parts of rat-stack's code, adapted for this repository. Root ADRs 0014 and 0015 record how it differs.
+Much of the template's shape came from it: services in `packages/core` with each adapter in its own package, one contract per operation projected onto every transport, code mode for AI assistants, and the `no-comments` lint rule. Of these, Drone Studio keeps the `no-comments` rule; the rest went with the server stack (root ADR 0016). Root ADRs 0014 and 0015 record how it differs.
 
 ---
 

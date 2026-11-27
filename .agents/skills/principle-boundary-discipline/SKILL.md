@@ -10,19 +10,19 @@ Validate where data enters the system. Inside, trust the types. Validation scatt
 
 ## The edges in this repo
 
-| Edge                    | Where it is parsed                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| HTTP, RPC and MCP input | the contract's `input` schema in `packages/domain`, decoded before the handler runs |
-| config and secrets      | `Config` in a `layerConfig` in an adapter package (`config.pair`)                   |
-| database rows           | the repository decodes rows into domain records (`schema.decode`)                   |
-| other systems           | the adapter in `packages/<system>/` turns their response into a domain type         |
-| form input              | the contract's schema through `effectTsResolver` (`schema.forms`)                   |
+| Edge                          | Where it is parsed                                                       |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| hardware manifests            | `drone validate`, against the JSON Schemas in `hardware/schemas/`        |
+| engine JSON-RPC and MCP input | the message types in the Rust crate that serves them, decoded on arrival |
+| CLI arguments                 | the `drone` CLI's argument parser                                        |
+| config                        | `Config` in a `layerConfig` in a composition root (`config.pair`)        |
+| the engine, in the renderer   | the engine client, which decodes every message into a typed value        |
 
 ## Rules
 
 - Decode once, at the edge, with `Schema.decodeUnknownEffect`. Inside, take the decoded type and do not check it again.
-- Do not pass the edge's own representation inward or outward: no raw request, SQL row, better-auth object or Cloudflare binding in a service signature. Expose the domain type.
-- Handlers decode, call one service method and map its errors (`services.placement`). Logic in a handler is logic that cannot be tested without HTTP.
+- Do not pass the edge's own representation inward or outward: no raw JSON message, serial frame or Electron object in a service or crate signature. Expose the domain type.
+- Handlers decode, call one function or service method and map its errors (`services.placement`). Logic in a handler is logic that cannot be tested without the transport.
 - Work that needs no services is a pure function next to the service.
 
 Two questions settle most cases. "Is this data crossing an edge right now?" If not, the check is redundant. "Could this be a pure function the shell just calls?" If yes, extract it.

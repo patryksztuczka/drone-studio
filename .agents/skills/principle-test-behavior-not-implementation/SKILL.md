@@ -19,9 +19,9 @@ Keep a test that catches the first edit and survives the second. Rewrite or dele
 
 ## In this repo
 
-- Drive the code through its public seam (`test.seams`): the service method, the endpoint, the store port. Derive the expected value from the requirement, not from a run of the code.
+- Drive the code through its public seam (`test.seams`): the service method, the crate's public API, the CLI command. Derive the expected value from the requirement, not from a run of the code.
 - Assert the error tag callers branch on (`test.errors`), not the message text no caller reads.
-- A store's contract runs on real Postgres (`tl.postgres`, root ADR 0003). A `Layer.mock` stands in only for what the code under test does not own (`tl.mocks`). The payload a mocked external service receives is behavior, because that service observes it.
+- A `Layer.mock` stands in only for what the code under test does not own (`tl.mocks`). The payload a mocked external service receives is behavior, because that service observes it.
 - When the promise is "never does X", pair the test with a case where X happens, so the test shows it can see X.
 
 The rules for writing the test itself are in the `effect-best-practices` skill, references 11 and 12.

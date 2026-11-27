@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Two versions of the same thing in one repo make every later reader guess which one is right, and the next agent tends to add a third. This repo has no external consumers of its code, so there is nothing to stay compatible with: the new version replaces the old one in the same change.
 
-The only exceptions are things outside the code that someone else holds: the public HTTP API and RPC contract once a client you do not deploy uses it, database columns while a migration is running, and stored data. For those, write an ADR with the removal date before you add the second version.
+The only exceptions are things outside the code that someone else holds: the engine protocol once a client you do not ship uses it, the hardware manifest format, and recorded runs. For those, write an ADR with the removal date before you add the second version.
 
 ## Steps
 

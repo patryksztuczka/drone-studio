@@ -1,13 +1,13 @@
 ---
 name: verify-web
-description: Prove a change works in the running app, not only in tests. Use after any change a user could see or hit in apps/web, apps/api, packages/domain, packages/ui, auth or migrations, before you say it is done, and whenever the user asks to check, click through, smoke test or screenshot the app.
+description: Prove a change works in the running Studio, not only in tests. Use after any change a user could see or hit in apps/web, apps/desktop or packages/ui, before you say it is done, and whenever the user asks to check, click through, smoke test or screenshot the app.
 ---
 
 # Verify web
 
-Green tests are not proof. In this repo the todo form passed typecheck, lint and every unit test while the second add after a reset did nothing under the React Compiler. A person clicking twice found it in ten seconds. This skill is that person.
+Green tests are not proof. In the template this project came from, a form passed typecheck, lint and every unit test while the second submit after a reset did nothing under the React Compiler. A person clicking twice found it in ten seconds. This skill is that person.
 
-Run the five steps in order. A step that fails is the result; do not skip to the next one and report success.
+Run the four steps in order. A step that fails is the result; do not skip to the next one and report success.
 
 ## 1. Launch
 
@@ -21,35 +21,20 @@ If it prints a state, reuse that server. Otherwise start one in the background a
 pnpm dev    # runs until stopped, so start it as a background task
 ```
 
-`pnpm dev` derives its ports from this worktree's path, so two worktrees never share a port or a database. Never assume 5173 or 1337. Read the URLs from `.dev/state.json`:
+`pnpm dev` derives its port from this worktree's path, so two worktrees never share one. Never assume 5173. Read the URL from `.dev/state.json`:
 
 ```json
-{ "status": "ready", "urls": { "web": "http://localhost:20040", "api": "http://localhost:20041" } }
+{ "status": "ready", "urls": { "web": "http://localhost:20040" } }
 ```
 
-`node scripts/dev.mjs ports` prints them without starting anything. `DEV_WEB_PORT`, `DEV_API_PORT` and `DEV_POSTGRES_PORT` override them.
+`node scripts/dev.mjs ports` prints it without starting anything. `DEV_WEB_PORT` overrides it. To check the desktop window, run `pnpm dev:desktop`; it reuses this server.
 
-## 2. Doctor
-
-```sh
-pnpm dev:doctor
-```
-
-It checks the launcher and its children, Postgres, that every file in `packages/database/migrations` is applied, `/api/health` on the api and through the web proxy, the HTML shell, the demo user, and an authenticated `GET /api/todos`. It creates the demo user when it is missing:
-
-```
-demo@example.com / demo12345
-```
-
-Every line must say `OK`. A `FAIL` names the log to read. Fix the environment before you touch the browser, or you will debug the wrong thing.
-
-## 3. Drive
+## 2. Drive
 
 Open the feature file for what you changed and follow its "Drive" steps:
 
-- [features/auth.md](features/auth.md): sign up, sign in, sign out, redirects
-- [features/errors.md](features/errors.md): missing URLs, render crashes and recovery
-- [features/todos.md](features/todos.md): list, add, toggle, remove, HTTP and RPC transports
+- [features/studio.md](features/studio.md): the Studio page and the desktop window
+- [features/errors.md](features/errors.md): render crashes and recovery
 
 Use the browser you have, in this order:
 
@@ -61,51 +46,42 @@ export AGENT_BROWSER_SESSION="$(pnpm -s browser session id --scope worktree --pr
 WEB="$(node -p 'require("./.dev/state.json").urls.web')"
 EVIDENCE="$PWD/.scratch/evidence"
 
-pnpm -s browser open "$WEB/sign-in"
-pnpm -s browser record start "$EVIDENCE/sign-in.mp4" --cursor
+pnpm -s browser open "$WEB/"
+pnpm -s browser record start "$EVIDENCE/studio.mp4" --cursor
 pnpm -s browser snapshot -i
-pnpm -s browser fill @e1 "demo@example.com"
-pnpm -s browser fill @e2 "demo12345"
-pnpm -s browser click @e3
-pnpm -s browser wait --url "**/todos"
-pnpm -s browser screenshot "$EVIDENCE/todos.png"
+pnpm -s browser wait '[role="status"]'
+pnpm -s browser screenshot "$EVIDENCE/studio.png"
 pnpm -s browser record stop
 pnpm -s browser errors
 pnpm -s browser console
 ```
 
-Take the refs from your own `snapshot -i`, not from this example, and snapshot again after every change on the page. Give `screenshot` an absolute path: a lone argument that starts with `.` is read as a CSS selector, and the image lands in a temporary directory. A session without `--restore` starts with an empty profile, so you start signed out. `errors` and `console` print the page errors and the console output.
+Take the refs from your own `snapshot -i`, not from this example, and snapshot again after every change on the page. Give `screenshot` an absolute path: a lone argument that starts with `.` is read as a CSS selector, and the image lands in a temporary directory. `errors` and `console` print the page errors and the console output.
 
 Drive it like a user, not like a test. Type into the field, click the button, wait for what a person would see. Do the thing twice when the feature file says so. Change one thing at a time and look at the screen after each step.
 
-## 4. Evidence
+## 3. Evidence
 
 Save screenshots and recordings to `.scratch/evidence/` (gitignored). Name each screenshot of a screen your change alters `<screen>.after.png`, and take a `<screen>.before.png` of the same screen in the same state without your change: before you edit, or from the base commit in its own worktree, where `pnpm dev` gets its own ports. The pull request shows them side by side (the `file-pr` skill). In your final message, quote:
 
-- the doctor output,
 - each step you drove and what you saw, in one line each,
 - the screenshot and recording paths, embedded when the host renders them,
-- the lines from `.dev/logs/api.log` or `.dev/logs/web.log` that cover your requests, and any error or warning there or in `agent-browser errors` and `console`.
+- the lines from `.dev/logs/web.log` that cover your requests, and any error or warning there or in `agent-browser errors` and `console`.
 
 For a pull request, upload the same files with `pnpm -s pr-evidence` (the `file-pr` skill). When that upload is not set up, the chat is the only place the user sees them, so embed them there.
 
 If you could not drive a step, say which and why. "Verified" without this evidence is a claim, not a result.
 
-## 5. Cleanup
+## 4. Cleanup
 
 - Stop a `pnpm dev` you started: `pnpm dev:stop`. Leave one you reused running.
-- The Postgres container stays up between runs. Stop it with `node scripts/dev.mjs db:down`; its volume and the demo user survive.
 - Close browser tabs you opened, and the `agent-browser` session with `pnpm -s browser close`.
-- Remove your test todos only when the feature file asks for a clean list.
 
 ## When the app lies
 
 These hold for any feature. Each feature file ends with "What usually lies" for its own traps; read both before you call a step good.
 
 - **The second submit.** Under the React Compiler, `form.reset()` inside `handleSubmit` plus reading `form.formState` made the first submit work and every later one do nothing, and `reset()` there can leave the fields as they were. Tests that render a form once never see it. Submit twice in a row. Forms read `useFormState` and clear fields with `resetField`.
-- **Data that only lives in the cache.** A mutation that forgets its reactivity key still looks right until you reload. Reload after every write you check.
-- **The same data on two pages.** A list page with counts and a detail page that changes them: after a write on one, open the other and check it moved too.
-- **A 401 that looks like an empty list.** If a list is empty after sign-in, check `.dev/logs/api.log` and the network for `401` before you believe it.
-- **Owner isolation.** Another user must not see or change the demo user's rows. Sign up a second user in a fresh browser profile when you touch a store or the auth middleware.
+- **A page that only works in the browser.** The desktop window loads the same URL, but with no permissions, no popups and every outside link sent to the system browser. Check a change that opens, links or asks for a permission in `pnpm dev:desktop` too.
 
 When you find a new one, add it in one line with how to see it: here when it holds for any feature, in the feature file when it does not.

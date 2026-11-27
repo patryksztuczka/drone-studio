@@ -13,18 +13,6 @@ const SOURCES = [
     read: "packages/effect/src, packages/effect/test, packages/*/src",
   },
   {
-    name: "alchemy",
-    repository: "https://github.com/alchemy-run/alchemy.git",
-    tag: (version) => `v${version}`,
-    read: "packages/alchemy/src, packages/*/src, examples/",
-  },
-  {
-    name: "better-auth",
-    repository: "https://github.com/better-auth/better-auth.git",
-    tag: (version) => `v${version}`,
-    read: "packages/better-auth/src, docs/content/docs",
-  },
-  {
     name: "electron",
     repository: "https://github.com/electron/electron.git",
     tag: (version) => `v${version}`,
