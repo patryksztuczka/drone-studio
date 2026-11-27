@@ -1,54 +1,67 @@
-import { emuStatus, realStatus } from "@drone-studio/engine-client";
-import { useAtom, useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { emuStatus, realStatus, runSmoke, SmokeRun, smokeRun } from "@drone-studio/engine-client";
+import type { EmuStatus } from "@drone-studio/engine-client";
+import { cn } from "@drone-studio/ui/lib/utils";
+import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { Option } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import type { ReactNode } from "react";
 
-import { CloseIcon } from "../../../shared/icons.tsx";
+import { fixed } from "../../../shared/format.ts";
+import { PlayIcon } from "../../../shared/icons.tsx";
 import { studioMode } from "../../../shared/studio.atoms.ts";
 
 interface RowProps {
   readonly label: string;
+  readonly tone?: "ok" | "fail" | "ink";
   readonly children: ReactNode;
 }
 
-const Row = ({ label, children }: RowProps) => (
-  <div className="flex items-baseline justify-between gap-6 border-b border-hairline py-1.5 last:border-0">
-    <span className="text-[11px] text-muted-foreground">{label}</span>
-    <span className="font-mono text-[11px] text-foreground">{children}</span>
+const TONE_CLASSES = { ok: "text-ok", fail: "text-fail", ink: "text-ink" } as const;
+
+const Row = ({ label, tone = "ink", children }: RowProps) => (
+  <div className="flex items-baseline justify-between gap-6">
+    <span className="font-label text-[12px] leading-4 text-muted">{label}</span>
+    <span className={cn("text-right font-label text-[12px] leading-4", TONE_CLASSES[tone])}>
+      {children}
+    </span>
   </div>
 );
 
 interface CardProps {
-  readonly tone: string;
   readonly title: string;
   readonly badge: string;
+  readonly tone: "amber" | "ok";
   readonly children: ReactNode;
 }
 
-const Card = ({ tone, title, badge, children }: CardProps) => {
+const Card = ({ title, badge, tone, children }: CardProps) => {
   const [, setMode] = useAtom(studioMode);
 
   return (
     <section
       aria-label={title}
-      className="pointer-events-auto absolute top-14 right-3 w-[340px] rounded-lg border bg-[#0b0e14e6] p-4 backdrop-blur-md"
-      style={{ borderColor: `${tone}55`, boxShadow: `0 0 40px ${tone}14` }}
+      className={cn(
+        "pointer-events-auto absolute top-[72px] right-5 z-10 flex w-[360px] flex-col border bg-surface shadow-[0_14px_40px_#11111114]",
+        tone === "amber" ? "border-amber" : "border-ok",
+      )}
     >
-      <header className="mb-3 flex items-center gap-2">
+      <header className="flex items-center gap-2.5 border-b border-line px-3.5 py-3">
         <span
-          className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-[0.14em] text-[#0b0e14]"
-          style={{ background: tone }}
+          className={cn(
+            "px-[7px] py-0.5 font-label text-[10px] leading-3 whitespace-pre text-white",
+            tone === "amber" ? "bg-amber" : "bg-ok",
+          )}
         >
           {badge}
         </span>
-        <h2 className="text-[13px] font-semibold">{title}</h2>
+        <h2 className="flex-1 text-[14px] leading-[18px] font-normal text-ink">{title}</h2>
         <button
           type="button"
           aria-label="Back to SIM"
           onClick={() => setMode("SIM")}
-          className="ml-auto text-muted-foreground hover:text-foreground"
+          className="cursor-pointer text-[14px] leading-[18px] text-faint hover:text-ink"
         >
-          <CloseIcon width={14} height={14} />
+          ×
         </button>
       </header>
       {children}
@@ -56,54 +69,100 @@ const Card = ({ tone, title, badge, children }: CardProps) => {
   );
 };
 
+const lastSmoke = (status: EmuStatus) => {
+  const report = status.last_smoke;
+
+  if (report === null) return { tone: "ink" as const, text: "never" };
+
+  const duration = report.duration_s === undefined ? "" : ` · ${fixed(report.duration_s, 1)} s`;
+
+  return report.ok
+    ? { tone: "ok" as const, text: `PASS${duration}` }
+    : { tone: "fail" as const, text: `FAIL${duration}` };
+};
+
 const EmuCard = () => {
   const status = useAtomValue(emuStatus);
   const refresh = useAtomRefresh(emuStatus);
+  const run = useAtomValue(smokeRun);
+  const start = useAtomSet(runSmoke);
+  const running = Option.match(run, { onNone: () => false, onSome: SmokeRun.guards.Running });
+  const value = AsyncResult.isSuccess(status) ? status.value : undefined;
+  const smoke = value === undefined ? undefined : lastSmoke(value);
+  const failure = value?.last_smoke?.ok === false ? value.last_smoke.error : undefined;
 
   return (
-    <Card tone="#f5a524" title="Renode emulation" badge="EMU">
-      {AsyncResult.isSuccess(status) ? (
-        <>
-          <Row label="Docker">{status.value.docker ?? "not found"}</Row>
-          <Row label="Firmware ELF">{status.value.elf_built ? "built" : "not built"}</Row>
-          <Row label="Renode platform">{status.value.repl ? "generated" : "missing"}</Row>
-          <Row label="Last smoke test">
-            {status.value.last_smoke === null ? "never" : "recorded"}
-          </Row>
-          <p className="mt-3 rounded-md bg-[#f5a52412] px-3 py-2 font-mono text-[11px] leading-relaxed text-[#fcd34d]">
-            {status.value.hint}
-          </p>
-        </>
-      ) : (
-        <p className="font-mono text-[11px] text-muted-foreground">Asking drone-engine…</p>
-      )}
-      <button
-        type="button"
-        onClick={refresh}
-        className="mt-3 h-7 rounded-md border border-hairline px-3 text-[11px] text-muted-foreground hover:text-foreground"
+    <Card tone="amber" title="Renode emulation" badge="EMU">
+      <div className="flex flex-col gap-[9px] px-3.5 py-3">
+        {value === undefined ? (
+          <Row label="drone-engine">asking…</Row>
+        ) : (
+          <>
+            <Row label="Docker" tone={value.docker === null ? "fail" : "ink"}>
+              {value.docker ?? "not found"}
+            </Row>
+            <Row label="Firmware ELF" tone={value.elf_built ? "ok" : "fail"}>
+              {value.elf_built ? "built" : "not built"}
+            </Row>
+            <Row label="Renode platform" tone={value.repl ? "ok" : "fail"}>
+              {value.repl ? "generated" : "missing"}
+            </Row>
+            <Row label="Last smoke test" tone={running ? "ink" : (smoke?.tone ?? "ink")}>
+              {running ? "running…" : (smoke?.text ?? "never")}
+            </Row>
+          </>
+        )}
+      </div>
+      <p
+        className={cn(
+          "mx-3.5 border px-[11px] py-[9px] text-[12px] leading-[18px]",
+          failure === undefined
+            ? "border-[#f5d9a8] bg-[#fff8ec] text-[#8a5300]"
+            : "border-fail/40 bg-[#fdeeee] text-fail",
+        )}
       >
-        Check again
-      </button>
+        {failure ??
+          "The smoke test builds the STM32H743 firmware and boots it in Renode. The SIM flight keeps running meanwhile."}
+      </p>
+      <div className="flex gap-2 px-3.5 py-3">
+        <button
+          type="button"
+          onClick={() => start()}
+          disabled={running || value?.docker === null}
+          className="flex cursor-pointer items-center gap-2 rounded-full bg-ink px-3.5 py-2 text-[12px] leading-4 text-white disabled:cursor-default disabled:opacity-40"
+        >
+          <PlayIcon className="size-[9px]" />
+          {running ? "Running smoke test…" : "Run smoke test"}
+        </button>
+        <button
+          type="button"
+          onClick={refresh}
+          className="cursor-pointer rounded-full border border-line-strong px-3.5 py-2 text-[12px] leading-4 text-ink hover:border-ink"
+        >
+          Check again
+        </button>
+      </div>
     </Card>
   );
 };
 
 const RealCard = () => {
   const status = useAtomValue(realStatus);
+  const value = AsyncResult.isSuccess(status) ? status.value : undefined;
 
   return (
-    <Card tone="#10b981" title="Real hardware" badge="REAL · READ-ONLY">
-      <Row label="Board link">
-        {AsyncResult.isSuccess(status) && status.value.connected ? "connected" : "none"}
-      </Row>
-      <Row label="Policy">{AsyncResult.isSuccess(status) ? status.value.policy : "read-only"}</Row>
-      <Row label="Motor commands">
-        <span className="text-danger">blocked until the M2 Safety Gate</span>
-      </Row>
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-        {AsyncResult.isSuccess(status)
-          ? status.value.detail
-          : "Studio only reads telemetry from a real board and never sends it commands."}
+    <Card tone="ok" title="Real hardware" badge="REAL · READ-ONLY">
+      <div className="flex flex-col gap-[9px] px-3.5 py-3">
+        <Row label="Board link">{value?.connected === true ? "connected" : "none"}</Row>
+        <Row label="Policy">{value?.policy ?? "read-only"}</Row>
+        <Row label="Telemetry">{value?.connected === true ? "streaming" : "waiting for USB"}</Row>
+        <Row label="Motor commands" tone="fail">
+          blocked until M2 Safety Gate
+        </Row>
+      </div>
+      <p className="mx-3.5 mb-3.5 border border-[#bfe5cd] bg-[#eaf7ef] px-[11px] py-[9px] text-[12px] leading-[18px] text-[#0d6b37]">
+        Studio only reads telemetry from a real board and never sends it commands. The SIM flight
+        keeps running here.
       </p>
     </Card>
   );

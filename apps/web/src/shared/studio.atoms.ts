@@ -54,6 +54,8 @@ export type InspectorTab = "hardware" | "telemetry" | "runs";
 
 export const inspectorTab = Atom.make<InspectorTab>("telemetry").pipe(Atom.keepAlive);
 
+export const runsSeenAt = Atom.make("").pipe(Atom.keepAlive);
+
 export type StudioMode = "SIM" | "EMU" | "REAL";
 
 export const studioMode = Atom.make<StudioMode>("SIM").pipe(Atom.keepAlive);
@@ -80,10 +82,10 @@ export interface FlightView {
   readonly status: SessionStatus | undefined;
 }
 
-const liveView = (recording: LiveRecording): FlightView => ({
+const liveView = (recording: LiveRecording, name: (id: string) => string): FlightView => ({
   key: `live:${String(recording.sessionId)}`,
   live: true,
-  label: recording.status?.scenario ?? "live session",
+  label: recording.status === undefined ? "live session" : name(recording.status.scenario),
   result: recording.stopped?.result ?? undefined,
   table: recording.table,
   events: recording.events,
@@ -109,7 +111,18 @@ const loadedView = (result: AsyncResult.AsyncResult<LoadedRun, unknown>) =>
 
 export const activeFlight = Atom.make((get): Option.Option<FlightView> =>
   PlaybackSource.match(get(playbackSource), {
-    Live: () => Option.map(get(liveRecording), liveView),
+    Live: () =>
+      Option.map(get(liveRecording), (recording) =>
+        liveView(recording, (id) => {
+          const info = get(engineInfo);
+
+          const known = AsyncResult.isSuccess(info)
+            ? info.value.scenarios.find((scenario) => scenario.id === id)
+            : undefined;
+
+          return known?.name ?? (id === "manual_flight" ? "Manual flight" : id);
+        }),
+      ),
     Run: (source) => loadedView(get(loadedRun(source.runId))),
   }),
 ).pipe(Atom.keepAlive);

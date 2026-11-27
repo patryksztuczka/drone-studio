@@ -1,3 +1,4 @@
+import { cn } from "@drone-studio/ui/lib/utils";
 import { useAtomValue } from "@effect/atom-react";
 
 import { manualFlightActive } from "../../../shared/studio.atoms.ts";
@@ -7,30 +8,19 @@ interface GimbalProps {
   readonly label: string;
   readonly x: number;
   readonly y: number;
-  readonly xLabel: string;
-  readonly yLabel: string;
+  readonly caption: string;
 }
 
-const Gimbal = ({ label, x, y, xLabel, yLabel }: GimbalProps) => (
-  <figure className="flex flex-col items-center gap-1">
-    <svg viewBox="-50 -50 100 100" className="size-[86px]" role="img" aria-label={label}>
-      <rect x="-46" y="-46" width="92" height="92" rx="14" fill="#0b0e14b3" stroke="#1f2632" />
-      <line x1="-46" x2="46" y1="0" y2="0" stroke="#1f2632" />
-      <line x1="0" x2="0" y1="-46" y2="46" stroke="#1f2632" />
-      <circle r="24" fill="none" stroke="#1f2632" strokeDasharray="2 3" />
-      <line x1="0" y1="0" x2={x * 38} y2={-y * 38} stroke="#22d3ee66" strokeWidth="1.5" />
-      <circle
-        cx={x * 38}
-        cy={-y * 38}
-        r="6.5"
-        fill="#22d3ee"
-        style={{ filter: "drop-shadow(0 0 6px #22d3ee)" }}
-      />
+const Gimbal = ({ label, x, y, caption }: GimbalProps) => (
+  <figure className="flex flex-col items-center gap-1.5">
+    <svg viewBox="0 0 86 86" className="size-[86px]" role="img" aria-label={label}>
+      <rect x="0.5" y="0.5" width="85" height="85" rx="8" fill="#ffffff" stroke="#d0d0d0" />
+      <path d="M43 8V78M8 43H78" stroke="#e5e5e5" />
+      <circle cx="43" cy="43" r="20" fill="none" stroke="#efefef" />
+      <circle cx={43 + x * 30} cy={43 - y * 30} r="12" fill="#0a6cff1f" />
+      <circle cx={43 + x * 30} cy={43 - y * 30} r="7" fill="#0a6cff" />
     </svg>
-    <figcaption className="flex gap-2 font-mono text-[9px] tracking-[0.1em] text-faint">
-      <span>{xLabel}</span>
-      <span>{yLabel}</span>
-    </figcaption>
+    <figcaption className="font-label text-[10px] leading-3 text-faint">{caption}</figcaption>
   </figure>
 );
 
@@ -44,33 +34,27 @@ export const StickHud = () => {
   return (
     <section
       aria-label="Sticks"
-      className="pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 rounded-lg border border-hairline bg-[#0b0e14b3] px-3 pt-2 pb-2.5 backdrop-blur-md"
+      className="pointer-events-none absolute bottom-[30px] left-5 z-10 flex w-[440px] items-center gap-4 border border-line-strong bg-surface p-3.5 shadow-card"
     >
-      <Gimbal
-        label="Left stick"
-        x={sticks.yaw}
-        y={sticks.throttle * 2 - 1}
-        xLabel="YAW"
-        yLabel="THR"
-      />
-      <Gimbal label="Right stick" x={sticks.roll} y={sticks.pitch} xLabel="ROLL" yLabel="PITCH" />
-      <div className="flex w-[150px] flex-col gap-1.5 pb-1">
+      <Gimbal label="Left stick" x={sticks.yaw} y={sticks.throttle * 2 - 1} caption="YAW · THR" />
+      <Gimbal label="Right stick" x={sticks.roll} y={sticks.pitch} caption="ROLL · PITCH" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2 font-label">
         <span
-          className="w-fit rounded-sm border px-1.5 py-0.5 font-mono text-[10px] tracking-[0.12em]"
-          style={
-            sticks.arm
-              ? { color: "#22d3ee", borderColor: "#22d3ee66" }
-              : { color: "#7b8698", borderColor: "#1f2632" }
-          }
+          className={cn(
+            "self-start border px-[9px] py-[3px] text-[11px] leading-[14px]",
+            sticks.arm ? "border-blue bg-blue-soft text-blue" : "border-line-strong text-muted",
+          )}
         >
           {sticks.arm ? "ARM SWITCH ON" : "ARM SWITCH OFF"}
         </span>
-        <span className="font-mono text-[10px] text-muted-foreground">
+        <span className="text-[11px] leading-[14px] text-ink">
           {sticks.mode === "althold" ? "ALT HOLD" : "ANGLE"} · THR{" "}
           {Math.round(sticks.throttle * 100)}%
         </span>
-        <span className="truncate font-mono text-[9px] text-faint" title={source}>
-          {source === "keyboard" ? "keyboard: W/S A/D arrows · Enter arm · M mode" : source}
+        <span className="text-[10px] leading-[15px] text-faint">
+          {source === "keyboard" ? "keyboard" : source}
+          <br />
+          A arm · Y mode · or keys W/S A/D ←→↑↓ · ⏎ arm · M mode
         </span>
       </div>
     </section>

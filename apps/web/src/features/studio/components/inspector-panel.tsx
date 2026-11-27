@@ -1,10 +1,13 @@
+import { runs } from "@drone-studio/engine-client";
+import { Dot } from "@drone-studio/ui/components/pill";
 import { cn } from "@drone-studio/ui/lib/utils";
-import { useAtom } from "@effect/atom-react";
+import { useAtom, useAtomValue } from "@effect/atom-react";
+import { AsyncResult } from "effect/reactivity";
 
 import type { InspectorTab } from "../../../shared/studio.atoms.ts";
-import { inspectorTab } from "../../../shared/studio.atoms.ts";
+import { inspectorTab, runsSeenAt } from "../../../shared/studio.atoms.ts";
 import { HardwareInspector } from "../../hardware-inspector/index.ts";
-import { RunsFeed } from "../../runs/index.ts";
+import { RunsFeed, unseenAgentRun } from "../../runs/index.ts";
 import { TelemetryPanel } from "../../telemetry/index.ts";
 
 const TABS: ReadonlyArray<{
@@ -19,16 +22,16 @@ const TABS: ReadonlyArray<{
 
 export const InspectorPanel = () => {
   const [tab, setTab] = useAtom(inspectorTab);
+  const list = useAtomValue(runs);
+  const seenAt = useAtomValue(runsSeenAt);
+  const fresh = tab !== "runs" && AsyncResult.isSuccess(list) && unseenAgentRun(list.value, seenAt);
 
   return (
-    <aside
-      aria-label="Inspector"
-      className="flex w-[430px] shrink-0 flex-col border-l border-hairline bg-panel"
-    >
+    <aside aria-label="Inspector" className="flex min-h-0 flex-1 flex-col">
       <div
         role="tablist"
         aria-label="Inspector"
-        className="flex h-10 shrink-0 items-end gap-1 border-b border-hairline px-2"
+        className="flex h-11 shrink-0 gap-[22px] border-b border-line px-5"
       >
         {TABS.map((entry) => (
           <button
@@ -40,15 +43,15 @@ export const InspectorPanel = () => {
             aria-controls={`panel-${entry.id}`}
             onClick={() => setTab(entry.id)}
             className={cn(
-              "relative flex h-9 items-center gap-1.5 px-3 text-[12px] font-medium transition-colors",
-              tab === entry.id ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              "-mb-px flex cursor-pointer items-center gap-1.5 border-b-2 text-[13px] leading-4 transition-colors",
+              tab === entry.id
+                ? "border-ink text-ink"
+                : "border-transparent text-muted hover:text-ink",
             )}
           >
             {entry.label}
-            <kbd className="font-mono text-[9px] text-faint">{entry.key}</kbd>
-            {tab === entry.id ? (
-              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-sim" />
-            ) : null}
+            <kbd className="font-label text-[10px] leading-3 text-faint">{entry.key}</kbd>
+            {entry.id === "runs" && fresh ? <Dot tone="fail" title="New agent run" /> : null}
           </button>
         ))}
       </div>
@@ -56,7 +59,7 @@ export const InspectorPanel = () => {
         role="tabpanel"
         id={`panel-${tab}`}
         aria-labelledby={`tab-${tab}`}
-        className="min-h-0 flex-1 overflow-y-auto p-3 [scrollbar-color:#1f2632_transparent] [scrollbar-width:thin]"
+        className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:#d0d0d0_transparent] [scrollbar-width:thin]"
       >
         {tab === "hardware" ? <HardwareInspector /> : null}
         {tab === "telemetry" ? <TelemetryPanel /> : null}

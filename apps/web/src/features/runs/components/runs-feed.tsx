@@ -1,28 +1,29 @@
 import { runs } from "@drone-studio/engine-client";
 import type { RunSummary } from "@drone-studio/engine-client";
+import { Dot } from "@drone-studio/ui/components/pill";
 import { cn } from "@drone-studio/ui/lib/utils";
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { AsyncResult } from "effect/reactivity";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 
 import { fixed } from "../../../shared/format.ts";
-import { GhostIcon } from "../../../shared/icons.tsx";
 import {
   cursor,
+  engineConnected,
   followLive,
   ghostRun,
   PlaybackSource,
   playbackSource,
   replayPlaying,
+  runsSeenAt,
 } from "../../../shared/studio.atoms.ts";
 import { failedAssertions, paramSummary, runDay, runTime } from "../run-labels.ts";
 
-const SOURCE_TONES: ReadonlyMap<string, string> = new Map([
-  ["mcp", "#a78bfa"],
-  ["suite", "#22d3ee"],
-  ["cli", "#7b8698"],
-  ["studio", "#10b981"],
+const SOURCE_CLASSES: ReadonlyMap<string, string> = new Map([
+  ["mcp", "border-ghost text-ghost"],
+  ["suite", "border-gust text-gust"],
+  ["studio", "border-ok text-ok"],
 ]);
 
 interface MetricProps {
@@ -31,19 +32,19 @@ interface MetricProps {
 }
 
 const Metric = ({ label, value }: MetricProps) => (
-  <span className="flex flex-col">
-    <span className="text-[8.5px] tracking-[0.14em] text-faint">{label}</span>
-    <span className="font-mono text-[11px] text-foreground tabular-nums">{value}</span>
+  <span className="flex flex-1 basis-0 flex-col font-label">
+    <span className="text-[9px] leading-3 text-faint">{label}</span>
+    <span className="text-[12px] leading-4 text-ink tabular-nums">{value}</span>
   </span>
 );
 
-interface RunRowProps {
+interface RunCardProps {
   readonly run: RunSummary;
   readonly open: boolean;
   readonly ghost: boolean;
 }
 
-const RunRow = ({ run, open, ghost }: RunRowProps) => {
+const RunCard = ({ run, open, ghost }: RunCardProps) => {
   const registry = useContext(RegistryContext);
   const passed = run.result === "PASS";
   const failures = failedAssertions(run);
@@ -59,111 +60,137 @@ const RunRow = ({ run, open, ghost }: RunRowProps) => {
   return (
     <li
       className={cn(
-        "group relative rounded-lg border bg-[#0d1118] transition-colors",
-        open
-          ? "border-sim/50 shadow-[0_0_0_1px_#22d3ee22]"
-          : "border-hairline hover:border-[#2a3342]",
-        ghost ? "border-ghost/50" : undefined,
+        "group relative flex flex-col gap-2 bg-surface px-3 py-2.5",
+        open ? "border-[1.5px] border-blue" : undefined,
+        ghost && !open ? "border-[1.5px] border-ghost" : undefined,
+        !open && !ghost ? "border border-line-strong hover:border-ink/40" : undefined,
       )}
     >
       <button
         type="button"
         onClick={openRun}
-        className="flex w-full flex-col gap-2 px-3 pt-2.5 pb-2 text-left"
+        aria-current={open ? "true" : undefined}
+        className="flex cursor-pointer items-center gap-2 text-left after:absolute after:inset-0"
       >
-        <span className="flex items-center gap-2">
-          <span
-            className={cn(
-              "rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-[0.1em]",
-              passed ? "bg-[#10b9811f] text-real" : "bg-[#f052521f] text-danger",
-            )}
-          >
-            {run.result}
-          </span>
-          <span className="truncate text-[12.5px] font-medium text-foreground">
-            {run.scenario_name}
-          </span>
-          <span
-            className="ml-auto rounded-sm border px-1.5 py-px font-mono text-[9px] tracking-[0.1em] uppercase"
-            style={{
-              color: SOURCE_TONES.get(run.source) ?? "#7b8698",
-              borderColor: `${SOURCE_TONES.get(run.source) ?? "#7b8698"}44`,
-            }}
-          >
-            {run.source}
-          </span>
+        <span
+          className={cn(
+            "px-1.5 py-px font-label text-[10px] leading-3 text-white",
+            passed ? "bg-ok" : "bg-fail",
+          )}
+        >
+          {run.result}
         </span>
-        <span className="grid grid-cols-4 gap-2">
-          <Metric label="MAX TILT" value={`${fixed(run.metrics.max_tilt_deg, 1)}°`} />
-          <Metric label="ATT RMS" value={`${fixed(run.metrics.attitude_error_rms_deg, 2)}°`} />
-          <Metric label="MIN PACK" value={`${fixed(run.metrics.min_battery_v, 2)} V`} />
-          <Metric label="DURATION" value={`${fixed(run.duration_s, 1)} s`} />
+        <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-ink">
+          {run.scenario_name}
         </span>
-        <span className="flex items-center gap-2 font-mono text-[9.5px] text-faint">
-          <span>
-            {runDay(run.created_at)} {runTime(run.created_at)}
+        <span
+          className={cn(
+            "border px-1.5 py-px font-label text-[10px] leading-3 uppercase",
+            SOURCE_CLASSES.get(run.source) ?? "border-line-strong text-muted",
+          )}
+        >
+          {run.source}
+        </span>
+      </button>
+      <span className="flex">
+        <Metric label="MAX TILT" value={`${fixed(run.metrics.max_tilt_deg, 1)}°`} />
+        <Metric label="ATT RMS" value={`${fixed(run.metrics.attitude_error_rms_deg, 2)}°`} />
+        <Metric label="MIN PACK" value={`${fixed(run.metrics.min_battery_v, 2)} V`} />
+        <Metric label="DURATION" value={`${fixed(run.duration_s, 1)} s`} />
+      </span>
+      <span className="flex min-h-[22px] items-center justify-between gap-2">
+        <span className="flex min-w-0 flex-wrap gap-x-2 font-label text-[10px] leading-3">
+          <span className="text-faint">
+            {runDay(run.created_at)} {runTime(run.created_at)} · seed {String(run.seed)}
           </span>
-          <span>seed {String(run.seed)}</span>
           {failures > 0 ? (
-            <span className="text-danger">{String(failures)} assertion failed</span>
+            <span className="text-fail">
+              {String(failures)} assertion{failures === 1 ? "" : "s"} failed
+            </span>
           ) : null}
           {params === "" ? null : (
-            <span className="truncate text-emu" title={params}>
+            <span className="truncate text-amber" title={params}>
               {params}
             </span>
           )}
         </span>
-      </button>
-      <button
-        type="button"
-        onClick={() => registry.set(ghostRun, ghost ? Option.none() : Option.some(run.run_id))}
-        aria-pressed={ghost}
-        title={ghost ? "Remove the ghost" : "Fly this run as a ghost beside the open one"}
-        className={cn(
-          "absolute right-2 bottom-2 flex h-6 items-center gap-1 rounded-md border px-2 text-[10px] font-medium transition-opacity",
-          ghost
-            ? "border-ghost/60 bg-[#a78bfa1f] text-ghost"
-            : "border-hairline bg-panel text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-ghost focus-visible:opacity-100",
+        {open ? null : (
+          <button
+            type="button"
+            onClick={() => registry.set(ghostRun, ghost ? Option.none() : Option.some(run.run_id))}
+            aria-pressed={ghost}
+            title={ghost ? "Remove the ghost" : "Fly this run as a ghost beside the open one"}
+            className={cn(
+              "relative z-10 shrink-0 cursor-pointer rounded-full border px-[9px] py-0.5 text-[11px] leading-[14px]",
+              ghost
+                ? "border-ghost bg-[#f3f0ff] text-ghost"
+                : "border-line-strong text-ink opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+            )}
+          >
+            {ghost ? "Ghost on" : "Compare"}
+          </button>
         )}
-      >
-        <GhostIcon width={12} height={12} />
-        {ghost ? "Ghost on" : "Compare"}
-      </button>
+      </span>
     </li>
   );
 };
 
+const useMarkSeen = (newest: string | undefined) => {
+  const registry = useContext(RegistryContext);
+
+  useEffect(() => {
+    if (newest !== undefined && newest > registry.get(runsSeenAt)) registry.set(runsSeenAt, newest);
+  }, [registry, newest]);
+};
+
+const EmptyFeed = ({ title, detail }: { readonly title: string; readonly detail: string }) => (
+  <div className="mx-5 mt-5 flex flex-col gap-2 border border-dashed border-line-strong p-[18px]">
+    <p className="text-[14px] leading-[18px] text-ink">{title}</p>
+    <p className="text-[12px] leading-[18px] text-muted">{detail}</p>
+    <p className="font-label text-[11px] leading-[14px] text-faint">drone sim suite · sim_suite</p>
+  </div>
+);
+
 export const RunsFeed = () => {
   const list = useAtomValue(runs);
+  const connected = useAtomValue(engineConnected);
   const source = useAtomValue(playbackSource);
   const ghost = useAtomValue(ghostRun);
+  const loaded = AsyncResult.isSuccess(list) ? list.value : [];
+
+  useMarkSeen(loaded[0]?.created_at);
 
   const openRun = PlaybackSource.match(source, { Live: () => undefined, Run: (run) => run.runId });
 
   if (!AsyncResult.isSuccess(list)) {
-    return <p className="px-1 py-6 text-center font-mono text-[11px] text-faint">Reading runs/…</p>;
-  }
-
-  if (list.value.length === 0) {
-    return (
-      <p className="px-1 py-6 text-center text-[12px] leading-relaxed text-muted-foreground">
-        No recorded runs yet. Fly a scenario, or let an agent run the regression suite.
-      </p>
+    return connected ? (
+      <p className="px-5 py-6 font-label text-[11px] text-faint">reading runs/…</p>
+    ) : (
+      <EmptyFeed title="No runs to show yet." detail="Runs appear once drone-engine connects." />
     );
   }
 
-  const passed = list.value.filter((run) => run.result === "PASS").length;
+  if (loaded.length === 0) {
+    return (
+      <EmptyFeed
+        title="No recorded runs yet."
+        detail="Fly a scenario, or let an agent run the regression suite."
+      />
+    );
+  }
+
+  const passed = loaded.filter((run) => run.result === "PASS").length;
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="flex items-center gap-2 px-0.5 font-mono text-[10px] text-faint">
-        <span className="size-1.5 animate-pulse rounded-full bg-real" />
-        live feed · {String(list.value.length)} runs · {String(passed)} pass ·{" "}
-        {String(list.value.length - passed)} fail
+    <div className="flex flex-col gap-2.5 px-5 py-3">
+      <p className="flex items-center gap-2 font-label text-[11px] leading-[14px] text-muted">
+        <Dot tone="ok" />
+        live feed · {String(loaded.length)} runs · {String(passed)} pass ·{" "}
+        {String(loaded.length - passed)} fail
       </p>
-      <ol className="flex flex-col gap-2">
-        {list.value.map((run) => (
-          <RunRow
+      <ol className="flex flex-col gap-2.5">
+        {loaded.map((run) => (
+          <RunCard
             key={run.run_id}
             run={run}
             open={openRun === run.run_id}

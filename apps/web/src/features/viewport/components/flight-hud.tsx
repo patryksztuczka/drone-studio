@@ -1,16 +1,11 @@
+import { cn } from "@drone-studio/ui/lib/utils";
 import { useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 
-import { fixed, percent, signed } from "../../../shared/format.ts";
+import { fixed, signed } from "../../../shared/format.ts";
+import { hudReadout, separation } from "../../../shared/hud-readout.ts";
+import type { HudReadout } from "../../../shared/hud-readout.ts";
 import { activeFlight, ghostFlight, playhead } from "../../../shared/studio.atoms.ts";
-import { hudReadout, separation } from "../hud-readout.ts";
-import type { HudReadout } from "../hud-readout.ts";
-
-const ARM_TONE: Readonly<Record<HudReadout["arm"], string>> = {
-  ARMED: "#22d3ee",
-  DISARMED: "#7b8698",
-  FAILSAFE: "#f05252",
-};
 
 interface CellProps {
   readonly label: string;
@@ -20,11 +15,11 @@ interface CellProps {
 }
 
 const Cell = ({ label, value, unit, tone }: CellProps) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-[9px] font-medium tracking-[0.14em] text-faint">{label}</span>
-    <span className="font-mono text-[15px] leading-none tabular-nums" style={{ color: tone }}>
+  <div className="flex w-1/3 flex-col">
+    <span className="font-label text-[10px] leading-3 text-faint">{label}</span>
+    <span className={cn("font-label text-[15px] leading-[18px] tabular-nums", tone ?? "text-ink")}>
       {value}
-      <span className="ml-1 text-[10px] text-muted-foreground">{unit}</span>
+      {unit === "" ? null : <span className="text-[10px] leading-3 text-faint"> {unit}</span>}
     </span>
   </div>
 );
@@ -37,54 +32,69 @@ interface HorizonProps {
 }
 
 const Horizon = ({ roll, pitch, setpointRoll, setpointPitch }: HorizonProps) => {
-  const shift = Math.max(-28, Math.min(28, pitch * 1.4));
-  const targetShift = Math.max(-28, Math.min(28, setpointPitch * 1.4));
+  const shift = Math.max(-26, Math.min(26, pitch * 1.4));
+  const targetShift = Math.max(-26, Math.min(26, setpointPitch * 1.4));
 
   return (
-    <svg viewBox="-36 -36 72 72" className="size-[72px] shrink-0" role="img" aria-label="Attitude">
+    <svg viewBox="0 0 72 72" className="size-[72px] shrink-0" role="img" aria-label="Attitude">
       <defs>
         <clipPath id="hud-horizon">
-          <circle r="34" />
+          <circle cx="36" cy="36" r="35" />
         </clipPath>
       </defs>
       <g clipPath="url(#hud-horizon)">
-        <g transform={`rotate(${String(-roll)}) translate(0 ${String(shift)})`}>
-          <rect x="-80" y="-80" width="160" height="80" fill="#0e2a36" />
-          <rect x="-80" y="0" width="160" height="80" fill="#1a1712" />
-          <line x1="-80" x2="80" y1="0" y2="0" stroke="#22d3ee" strokeWidth="1" />
-          {[-20, -10, 10, 20].map((step) => (
-            <line
-              key={step}
-              x1={-6}
-              x2={6}
-              y1={step * 1.4}
-              y2={step * 1.4}
-              stroke="#d7dde6"
-              strokeOpacity="0.45"
-              strokeWidth="0.8"
-            />
-          ))}
+        <g transform={`rotate(${String(-roll)} 36 36) translate(0 ${String(shift)})`}>
+          <rect x="-20" y="-40" width="112" height="78" fill="#eaf2ff" />
+          <rect x="-20" y="38" width="112" height="80" fill="#f3eee6" />
+          <path d="M-20 38H92" stroke="#0a6cff" />
+          <path d="M26 30H46M29 22H43M26 46H46" stroke="#9a9a9a" strokeWidth="0.8" />
         </g>
-        <g transform={`rotate(${String(-setpointRoll)}) translate(0 ${String(targetShift)})`}>
-          <line
-            x1="-22"
-            x2="22"
-            y1="0"
-            y2="0"
-            stroke="#e2e8f0"
-            strokeOpacity="0.6"
-            strokeDasharray="2 2"
-            strokeWidth="1"
-          />
+        <g transform={`rotate(${String(-setpointRoll)} 36 36) translate(0 ${String(targetShift)})`}>
+          <path d="M8 37H64" stroke="#0a6cff99" strokeDasharray="3 3" />
         </g>
       </g>
-      <circle r="34" fill="none" stroke="#1f2632" strokeWidth="2" />
-      <path d="M-16 0h10l3 4 3-4h10" fill="none" stroke="#f5a524" strokeWidth="1.6" />
+      <circle cx="36" cy="36" r="35" fill="none" stroke="#d0d0d0" />
+      <path
+        d="M22 37H31L36 41L41 37H50"
+        fill="none"
+        stroke="#e58a00"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 };
 
-export const FlightHud = () => {
+const HudPill = ({ tone, children }: { readonly tone: string; readonly children: string }) => (
+  <span
+    className={cn(
+      "rounded-full border px-[7px] py-0.5 font-label text-[10px] leading-3 whitespace-nowrap",
+      tone,
+    )}
+  >
+    {children}
+  </span>
+);
+
+const ARM_TONES: Readonly<Record<HudReadout["arm"], string>> = {
+  ARMED: "border-blue text-blue",
+  DISARMED: "border-line-strong text-muted",
+  FAILSAFE: "border-fail text-fail",
+};
+
+const windArrow = (from: number) => {
+  const towards = (from + 180) % 360;
+  const arrows = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
+
+  return arrows[Math.round(towards / 45) % 8] ?? "→";
+};
+
+interface FlightHudProps {
+  readonly className?: string;
+}
+
+export const FlightHud = ({ className }: FlightHudProps) => {
   const flight = useAtomValue(activeFlight);
   const ghost = useAtomValue(ghostFlight);
   const t = useAtomValue(playhead);
@@ -92,18 +102,25 @@ export const FlightHud = () => {
   if (Option.isNone(flight) || flight.value.table.length === 0) return null;
 
   const readout = hudReadout(flight.value.table, t);
-  const chargeTone = readout.charge < 0.2 ? "#f05252" : undefined;
+
+  const gap = Option.map(ghost, (other) => separation(flight.value.table, other.table, t).distance);
 
   return (
-    <div className="pointer-events-none absolute top-3 left-3 flex flex-col gap-2">
-      <div className="flex items-center gap-3 rounded-lg border border-hairline bg-[#0b0e14cc] px-3 py-2.5 backdrop-blur-md">
+    <section
+      aria-label="Flight readout"
+      className={cn(
+        "pointer-events-none flex w-[380px] flex-col border border-line-strong bg-surface shadow-card",
+        className,
+      )}
+    >
+      <div className="flex gap-4 px-3.5 pt-3.5 pb-3">
         <Horizon
           roll={readout.roll}
           pitch={readout.pitch}
           setpointRoll={readout.setpointRoll}
           setpointPitch={readout.setpointPitch}
         />
-        <div className="grid grid-cols-3 gap-x-5 gap-y-2.5">
+        <div className="flex flex-1 flex-wrap gap-y-2">
           <Cell label="ALT" value={fixed(readout.height, 2)} unit="m" />
           <Cell label="V/S" value={signed(readout.climb, 2)} unit="m/s" />
           <Cell label="GND SPD" value={fixed(readout.groundSpeed, 2)} unit="m/s" />
@@ -112,44 +129,31 @@ export const FlightHud = () => {
           <Cell label="YAW" value={fixed(((readout.yaw % 360) + 360) % 360, 0)} unit="°" />
           <Cell label="PACK" value={fixed(readout.voltage, 2)} unit="V" />
           <Cell label="CURRENT" value={fixed(readout.current, 1)} unit="A" />
-          <Cell label="CHARGE" value={percent(readout.charge)} unit="" tone={chargeTone} />
+          <Cell
+            label="CHARGE"
+            value={fixed(readout.charge * 100, 0)}
+            unit="%"
+            tone={readout.charge < 0.2 ? "text-fail" : undefined}
+          />
         </div>
       </div>
-      <div className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.12em]">
-        <span
-          className="rounded-sm border px-1.5 py-0.5"
-          style={{ color: ARM_TONE[readout.arm], borderColor: `${ARM_TONE[readout.arm]}55` }}
-        >
-          {readout.arm}
-        </span>
-        <span className="rounded-sm border border-hairline px-1.5 py-0.5 text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-3.5 py-[9px]">
+        <HudPill tone={ARM_TONES[readout.arm]}>{readout.arm}</HudPill>
+        <HudPill tone="border-line-strong text-ink">
           {readout.altitudeHold ? "ALT HOLD" : "ANGLE"}
-        </span>
-        {readout.saturated ? (
-          <span className="rounded-sm border border-[#f5a52455] px-1.5 py-0.5 text-emu">
-            SATURATED
-          </span>
-        ) : null}
+        </HudPill>
+        {readout.saturated ? <HudPill tone="border-amber text-amber">SATURATED</HudPill> : null}
         {readout.wind > 0.3 ? (
-          <span className="flex items-center gap-1 rounded-sm border border-hairline px-1.5 py-0.5 text-[#7dd3fc]">
-            <svg viewBox="-6 -6 12 12" className="size-2.5" aria-hidden="true">
-              <path
-                d="M0 -5L3 4L0 2L-3 4z"
-                fill="currentColor"
-                transform={`rotate(${String(readout.windFrom + 180)})`}
-              />
-            </svg>
-            WIND {fixed(readout.wind, 1)} m/s
-          </span>
+          <HudPill tone="border-line-strong text-ink">
+            {`WIND ${fixed(readout.wind, 1)} m/s ${windArrow(readout.windFrom)}`}
+          </HudPill>
         ) : null}
-        {Option.isSome(ghost) ? (
-          <span className="rounded-sm border border-[#a78bfa55] px-1.5 py-0.5 text-ghost">
-            GHOST · {ghost.value.label} · Δ{" "}
-            {fixed(separation(flight.value.table, ghost.value.table, t).distance, 2)} m · Δroll{" "}
-            {signed(separation(flight.value.table, ghost.value.table, t).roll, 1)}°
-          </span>
+        {Option.isSome(gap) ? (
+          <HudPill tone="border-ghost text-ghost">
+            {`GHOST · base · Δ ${fixed(gap.value, 2)} m`}
+          </HudPill>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 };

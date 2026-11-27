@@ -35,6 +35,15 @@ const CATALOG_GROUPS = {
   frame: "frames",
 } as const;
 
+const VERDICT_CLASSES = { better: "text-ok", worse: "text-fail", same: "text-faint" } as const;
+
+const LABELS: ReadonlyMap<string, string> = new Map([
+  ["Max thrust per rotor", "Max thrust / rotor"],
+]);
+
+const shortName = (item: CatalogItem) =>
+  item.name.replace(/ brushless$/, "").replace(/ tri-blade$/, " tri");
+
 interface PartsSwapProps {
   readonly layout: BoardLayout;
 }
@@ -59,21 +68,24 @@ export const PartsSwap = ({ layout }: PartsSwapProps) => {
     AsyncResult.isSuccess(catalog) ? catalog.value[CATALOG_GROUPS[slot]] : [];
 
   return (
-    <section aria-label="Component swap" className="flex flex-col gap-2.5">
-      <header className="flex items-center gap-2">
-        <h3 className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground">
-          COMPONENT SWAP
-        </h3>
-        <span className="font-mono text-[9px] text-faint">preview · hardware/ stays unchanged</span>
-        {changed ? (
-          <button
-            type="button"
-            onClick={() => setSelection(baseline)}
-            className="ml-auto rounded-md border border-hairline px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
-          >
-            Reset
-          </button>
-        ) : null}
+    <section aria-label="Component swap" className="flex flex-col gap-2 px-5 py-2.5">
+      <header className="flex items-baseline justify-between">
+        <div className="flex flex-col gap-px">
+          <h3 className="font-label text-[11px] leading-[14px] font-normal text-ink-soft">
+            COMPONENT SWAP
+          </h3>
+          <p className="text-[11px] leading-[14px] text-faint">
+            preview · hardware/ stays unchanged
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSelection(baseline)}
+          disabled={!changed}
+          className="cursor-pointer rounded-full border border-line-strong px-2.5 py-[3px] text-[12px] leading-4 text-ink hover:border-ink disabled:cursor-default disabled:opacity-40"
+        >
+          Reset
+        </button>
       </header>
       <div className="grid grid-cols-2 gap-1.5">
         {SLOTS.map(({ slot, label }) => {
@@ -83,59 +95,60 @@ export const PartsSwap = ({ layout }: PartsSwapProps) => {
             <label
               key={slot}
               className={cn(
-                "flex flex-col gap-0.5 rounded-md border bg-[#0d1118] px-2 py-1.5",
-                swapped ? "border-emu/50" : "border-hairline",
+                "relative flex flex-col gap-px border px-2 py-[5px]",
+                swapped ? "border-amber bg-[#fff8ec]" : "border-line-strong",
               )}
             >
-              <span className="text-[8.5px] font-semibold tracking-[0.16em] text-faint">
-                {label}
-              </span>
+              <span className="font-label text-[9px] leading-3 text-faint">{label}</span>
               <select
                 aria-label={label.toLowerCase()}
                 value={selection[slot]}
                 onChange={(event) => choose(slot, event.target.value)}
-                className="w-full cursor-pointer truncate bg-transparent font-mono text-[11px] text-foreground outline-none"
+                className="w-full cursor-pointer appearance-none truncate bg-transparent pr-3 text-[11px] leading-[14px] text-ink outline-none"
               >
                 {options(slot).map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.name} · {fixed(item.mass_g, 1)} g
+                    {shortName(item)}
                   </option>
                 ))}
               </select>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute right-2 bottom-[5px] text-[9px] leading-[14px] text-ink"
+              >
+                ▾
+              </span>
             </label>
           );
         })}
       </div>
       {AsyncResult.isSuccess(preview) ? (
         <>
-          <table className="w-full font-mono text-[11px]">
+          <table className="w-full">
             <thead>
-              <tr className="text-[8.5px] tracking-[0.14em] text-faint">
-                <th className="py-1 text-left font-semibold">METRIC</th>
-                <th className="py-1 text-right font-semibold">MANIFEST</th>
-                <th className="py-1 text-right font-semibold">PREVIEW</th>
-                <th className="py-1 text-right font-semibold">Δ</th>
+              <tr className="border-b border-line font-label text-[9px] leading-3 text-faint">
+                <th className="w-[37%] py-1 text-left font-normal">METRIC</th>
+                <th className="py-1 text-right font-normal">MANIFEST</th>
+                <th className="py-1 text-right font-normal">PREVIEW</th>
+                <th className="w-[18%] py-1 text-right font-normal">Δ</th>
               </tr>
             </thead>
             <tbody>
               {previewRows(preview.value).map((row) => (
-                <tr key={row.label} className="border-t border-hairline">
-                  <td className="py-1.5 font-sans text-[11.5px] text-muted-foreground">
-                    {row.label}
-                  </td>
-                  <td className="py-1.5 text-right text-faint tabular-nums">
+                <tr key={row.label} className="text-[11px] leading-[14px]">
+                  <td className="py-[3px] text-ink">{LABELS.get(row.label) ?? row.label}</td>
+                  <td className="py-[3px] text-right font-label text-muted tabular-nums">
                     {fixed(row.baseline, row.digits)}
+                    {row.unit === ":1" ? "" : ` ${row.unit}`}
                   </td>
-                  <td className="py-1.5 text-right text-foreground tabular-nums">
+                  <td className="py-[3px] text-right font-label text-ink tabular-nums">
                     {fixed(row.value, row.digits)}
-                    <span className="ml-0.5 text-[9px] text-faint">{row.unit}</span>
+                    {row.unit === ":1" ? "" : ` ${row.unit}`}
                   </td>
                   <td
                     className={cn(
-                      "py-1.5 text-right tabular-nums",
-                      row.verdict === "better" ? "text-real" : undefined,
-                      row.verdict === "worse" ? "text-danger" : undefined,
-                      row.verdict === "same" ? "text-faint" : undefined,
+                      "py-[3px] text-right font-label tabular-nums",
+                      VERDICT_CLASSES[row.verdict],
                     )}
                   >
                     {row.verdict === "same" ? "·" : signed(row.delta, row.digits)}
@@ -145,22 +158,19 @@ export const PartsSwap = ({ layout }: PartsSwapProps) => {
             </tbody>
           </table>
           {preview.value.warnings.map((warning) => (
-            <p
-              key={warning}
-              className="rounded-md border border-emu/30 bg-[#f5a52410] px-2.5 py-1.5 text-[11px] text-[#fcd34d]"
-            >
+            <p key={warning} className="text-[11px] leading-4 text-amber">
               {warning}
             </p>
           ))}
           {preview.value.simulated_firmware_matches ? null : (
-            <p className="text-[10.5px] leading-relaxed text-faint">
+            <p className="text-[11px] leading-4 text-amber">
               The simulator keeps flying the manifest. Edit hardware/ and run codegen to fly this
               build.
             </p>
           )}
         </>
       ) : (
-        <p className="font-mono text-[11px] text-faint">Recalculating…</p>
+        <p className="font-label text-[11px] text-faint">recalculating…</p>
       )}
     </section>
   );

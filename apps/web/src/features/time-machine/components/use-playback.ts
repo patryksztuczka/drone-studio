@@ -8,6 +8,7 @@ import {
   activeFlight,
   cursor,
   followLive,
+  inspectorTab,
   PlaybackSource,
   playbackSource,
   replayPlaying,
@@ -60,6 +61,7 @@ export const useStudioFocus = () => {
     registry.set(followLive, false);
     registry.set(replayPlaying, false);
     registry.set(cursor, target.value.t);
+    registry.set(inspectorTab, "runs");
   }, [registry, target]);
 };
 

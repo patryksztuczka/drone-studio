@@ -4,7 +4,7 @@ import type { FlightPose } from "./flight-pose.ts";
 
 const STREAKS = 90;
 
-const HALF_EXTENT = 1.4;
+const HALF_EXTENT = 0.16;
 
 const seeded = (index: number, salt: number) => {
   const value = Math.sin(index * 127.1 + salt * 311.7) * 43_758.5453;
@@ -34,7 +34,7 @@ export class WindStreaks {
     this.geometry = new BufferGeometry();
     this.geometry.setAttribute("position", this.positions);
     this.material = new LineBasicMaterial({
-      color: "#7dd3fc",
+      color: "#111111",
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -49,11 +49,11 @@ export class WindStreaks {
 
     if (pose === undefined || !this.object.visible) return;
 
-    this.material.opacity = Math.min(speed / 6, 1) * 0.55;
+    this.material.opacity = Math.min(speed / 6, 1) * 0.22;
 
     const [wx, wy, wz] = pose.wind;
-    const step = Math.min(dt, 0.05) * 0.6;
-    const tail = 0.05 + Math.min(speed, 8) * 0.025;
+    const step = Math.min(dt, 0.05) * 0.03;
+    const tail = 0.008 + Math.min(speed, 8) * 0.003;
     const [cx, cy, cz] = pose.position;
 
     for (let index = 0; index < STREAKS; index += 1) {
@@ -67,7 +67,7 @@ export class WindStreaks {
       this.offsets[base + 2] = oz;
 
       const x = cx + ox;
-      const y = Math.max(cy + oy * 0.5, 0.02);
+      const y = Math.max(cy + oy * 0.5, 0.004);
       const z = cz + oz;
 
       this.positions.setXYZ(index * 2, x, y, z);

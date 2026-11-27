@@ -85,11 +85,45 @@ export const timelineMarkers = (events: ReadonlyArray<FlightEvent>, end: number)
     bands.push({ kind: opener, start, end });
   }
 
-  return { points, bands };
+  const merged = mergeBands(bands);
+  const starts = new Set(merged.map((band) => `${band.kind}@${String(band.start)}`));
+
+  return {
+    points: points.filter(
+      (event) => !PAIRS.has(event.kind) || starts.has(`${event.kind}@${String(event.t)}`),
+    ),
+    bands: merged,
+  };
+};
+
+export const BAND_MERGE_GAP_S = 1;
+
+export const mergeBands = (bands: ReadonlyArray<Band>): ReadonlyArray<Band> => {
+  const sorted = [...bands].sort((a, b) => a.start - b.start);
+  const merged: Array<Band> = [];
+
+  for (const band of sorted) {
+    const index = merged.findLastIndex((candidate) => candidate.kind === band.kind);
+    const previous = merged[index];
+
+    if (previous !== undefined && band.start - previous.end <= BAND_MERGE_GAP_S) {
+      merged[index] = { ...previous, end: Math.max(previous.end, band.end) };
+    } else {
+      merged.push(band);
+    }
+  }
+
+  return merged;
 };
 
 export const anomalyBands = (anomalies: ReadonlyArray<Anomaly>): ReadonlyArray<Band> =>
-  anomalies.map((anomaly) => ({ kind: anomaly.kind, start: anomaly.t_start, end: anomaly.t_end }));
+  mergeBands(
+    anomalies.map((anomaly) => ({
+      kind: anomaly.kind,
+      start: anomaly.t_start,
+      end: anomaly.t_end,
+    })),
+  );
 
 export interface Advance {
   readonly t: number;

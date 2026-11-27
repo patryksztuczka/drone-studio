@@ -1,133 +1,126 @@
 import type { BoardLayout } from "@drone-studio/engine-client";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo } from "react";
-import { Vector3 } from "three";
-import type { Group } from "three";
+import type { Object3D } from "three";
 
 import { frdToScene } from "../frames-of-reference.ts";
+import type { PoseSampler } from "../pose-sampler.ts";
+import { thrustBand } from "../thrust-band.ts";
+import type { Anchor, TagSlots } from "./anchor-tags.tsx";
 
-export type LabelSlots = Map<string, HTMLDivElement>;
-
-interface XrayLabelsProps {
-  readonly layout: BoardLayout;
-  readonly slots: LabelSlots;
-  readonly body: () => Group | null;
+interface Callout {
+  readonly short: string;
+  readonly color: string;
+  readonly dx: number;
+  readonly dy: number;
 }
 
-export const XrayLabelTracker = ({ layout, slots, body }: XrayLabelsProps) => {
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
-  const point = useMemo(() => new Vector3(), []);
+const CALLOUTS: ReadonlyMap<string, Callout> = new Map([
+  ["board", { short: "FC", color: "#0a6cff", dx: 270, dy: -24 }],
+  ["imu", { short: "IMU", color: "#d6409f", dx: 270, dy: 4 }],
+  ["battery", { short: "BATT", color: "#e58a00", dx: -248, dy: -10 }],
+  ["barometer", { short: "BARO", color: "#5e9e00", dx: -266, dy: 18 }],
+]);
 
-  useFrame(() => {
-    const group = body();
+const MOTOR_TAG =
+  "absolute top-[18px] left-3 border bg-surface px-[5px] py-px font-label text-[10px] leading-3 whitespace-nowrap";
 
-    for (const hotspot of layout.airframe.hotspots) {
-      const element = slots.get(hotspot.id);
+const BAND_CLASSES = {
+  low: `${MOTOR_TAG} border-line text-muted`,
+  mid: `${MOTOR_TAG} border-amber text-amber`,
+  high: `${MOTOR_TAG} border-fail text-fail`,
+} as const;
 
-      if (element === undefined) continue;
+const motorName = (label: string) => label.replace("Motor ", "");
 
-      if (group === null || !group.visible) {
-        element.style.opacity = "0";
-        continue;
-      }
+const motorIndex = (id: string) => Number(id.replace(/\D/g, "")) - 1;
 
-      point.set(...frdToScene(hotspot.position_m));
-      group.localToWorld(point);
-      point.project(camera);
+export const xrayAnchors = (
+  layout: BoardLayout,
+  body: () => Object3D | null,
+  sampler: PoseSampler,
+): ReadonlyArray<Anchor> =>
+  layout.airframe.hotspots.map((hotspot): Anchor => {
+    const anchor = {
+      id: `xray:${hotspot.id}`,
+      object: body,
+      local: frdToScene(hotspot.position_m),
+    };
 
-      const x = ((point.x + 1) / 2) * size.width;
-      const y = ((1 - point.y) / 2) * size.height;
-      const inFront = point.z < 1;
+    if (hotspot.kind !== "motor") return anchor;
 
-      element.style.opacity = inFront ? "1" : "0";
-      element.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-    }
+    const index = motorIndex(hotspot.id);
+    const command = () => sampler.read(Number.NaN)?.motor[index] ?? 0;
+
+    return {
+      ...anchor,
+      value: () =>
+        thrustBand(command()) === "low"
+          ? motorName(hotspot.label)
+          : `${motorName(hotspot.label)} · ${String(Math.round(command() * 100))}%`,
+      valueClass: () => BAND_CLASSES[thrustBand(command())],
+    };
   });
-
-  return null;
-};
-
-const TONES: ReadonlyMap<string, string> = new Map([
-  ["board", "#22d3ee"],
-  ["imu", "#f472b6"],
-  ["barometer", "#a3e635"],
-  ["battery", "#f5a524"],
-  ["motor", "#94a3b8"],
-]);
-
-const SHORT: ReadonlyMap<string, string> = new Map([
-  ["board", "FC"],
-  ["imu", "IMU"],
-  ["barometer", "BARO"],
-  ["battery", "BATT"],
-]);
-
-const FAN: ReadonlyMap<string, readonly [number, number]> = new Map([
-  ["board", [-120, -84]],
-  ["imu", [118, -96]],
-  ["barometer", [138, -34]],
-  ["battery", [-138, -18]],
-]);
 
 interface XrayLabelLayerProps {
   readonly layout: BoardLayout;
-  readonly slots: LabelSlots;
+  readonly slots: TagSlots;
 }
 
 export const XrayLabelLayer = ({ layout, slots }: XrayLabelLayerProps) => (
   <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
     {layout.airframe.hotspots.map((hotspot) => {
-      const motor = hotspot.kind === "motor";
-      const tone = TONES.get(hotspot.kind) ?? "#94a3b8";
-      const [dx, dy] = FAN.get(hotspot.kind) ?? [0, -22];
-      const length = Math.hypot(dx, dy);
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const id = `xray:${hotspot.id}`;
+      const callout = CALLOUTS.get(hotspot.kind);
+
+      if (callout === undefined) {
+        return (
+          <div
+            key={hotspot.id}
+            ref={(element) => {
+              if (element === null) slots.delete(id);
+              else slots.set(id, { root: element, value: element.firstElementChild });
+            }}
+            className="absolute top-0 left-0 opacity-0"
+          >
+            <span className={BAND_CLASSES.low}>{motorName(hotspot.label)}</span>
+          </div>
+        );
+      }
+
+      const { dx, dy } = callout;
 
       return (
         <div
           key={hotspot.id}
           ref={(element) => {
-            if (element === null) slots.delete(hotspot.id);
-            else slots.set(hotspot.id, element);
+            if (element === null) slots.delete(id);
+            else slots.set(id, { root: element });
           }}
           className="absolute top-0 left-0 opacity-0 transition-opacity duration-150"
         >
+          <svg className="absolute top-0 left-0 overflow-visible" width="1" height="1">
+            <path
+              d={`M0 0L${String(dx * 0.35)} ${String(dy)}H${String(dx)}`}
+              fill="none"
+              stroke="#11111166"
+              strokeWidth="0.9"
+            />
+            <circle r="2.5" fill="#ffffff" stroke="#111111" />
+          </svg>
           <span
-            className="absolute -top-[3px] -left-[3px] size-[6px] rounded-full"
-            style={{ background: tone, boxShadow: `0 0 10px ${tone}` }}
-          />
-          <span
-            className="absolute top-0 left-0 h-px origin-left"
-            style={{
-              width: length,
-              transform: `rotate(${String(angle)}deg)`,
-              background: `${tone}99`,
-            }}
-          />
-          <span
-            className="absolute font-mono text-[10px] leading-none whitespace-nowrap"
+            className="absolute flex items-center gap-2 border border-line-strong bg-surface px-[9px] py-1 whitespace-nowrap"
             style={{
               left: dx,
               top: dy,
-              color: tone,
               transform: `translate(${dx < 0 ? "-100%" : "0"}, -50%)`,
-              padding: dx < 0 ? "0 6px 0 0" : "0 0 0 6px",
             }}
           >
-            {motor ? (
-              hotspot.label.replace("Motor ", "")
-            ) : (
-              <span
-                className="flex flex-col gap-0.5 rounded-sm border bg-[#0b0e14cc] px-1.5 py-1"
-                style={{ borderColor: `${tone}55` }}
-              >
-                <span className="font-semibold tracking-[0.12em]">
-                  {SHORT.get(hotspot.kind) ?? hotspot.kind}
-                </span>
-                <span className="text-[9px] text-[#94a3b8]">{hotspot.label}</span>
-              </span>
-            )}
+            <span
+              className="font-label text-[11px] leading-[14px]"
+              style={{ color: callout.color }}
+            >
+              {callout.short}
+            </span>
+            <span className="text-[12px] leading-4 text-ink">{hotspot.label}</span>
           </span>
         </div>
       );

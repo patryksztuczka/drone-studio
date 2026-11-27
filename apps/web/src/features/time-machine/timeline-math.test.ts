@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   advancePlayback,
+  anomalyBands,
   fractionOf,
   labelledMarkers,
   latestEventIndex,
@@ -74,6 +75,59 @@ describe("timeline math", () => {
       ),
     ).toBe(0);
     expect(latestEventIndex([{ t: 3, kind: "ARM" }], 1)).toBe(-1);
+  });
+});
+
+describe("mergeBands", () => {
+  it("joins flickering saturation into one band with one marker and keeps far apart gusts", () => {
+    const markers = timelineMarkers(
+      [
+        { t: 2, kind: "SATURATION" },
+        { t: 2.2, kind: "SATURATION_END" },
+        { t: 2.5, kind: "SATURATION" },
+        { t: 2.6, kind: "SATURATION_END" },
+        { t: 3, kind: "GUST_START" },
+        { t: 3.5, kind: "GUST_END" },
+        { t: 3.3, kind: "SATURATION" },
+        { t: 6, kind: "GUST_START" },
+      ],
+      8,
+    );
+
+    expect(markers.bands).toEqual([
+      { kind: "SATURATION", start: 2, end: 8 },
+      { kind: "GUST_START", start: 3, end: 3.5 },
+      { kind: "GUST_START", start: 6, end: 8 },
+    ]);
+    expect(markers.points.map((event) => `${event.kind}@${String(event.t)}`)).toEqual([
+      "SATURATION@2",
+      "GUST_START@3",
+      "GUST_START@6",
+    ]);
+  });
+});
+
+describe("anomalyBands", () => {
+  it("joins repeated anomalies of one kind into one band", () => {
+    const anomaly = (kind: string, start: number, end: number) => ({
+      kind,
+      channel: "motor_1",
+      detail: "",
+      severity: "warn",
+      t_start: start,
+      t_end: end,
+    });
+
+    expect(
+      anomalyBands([
+        anomaly("saturation", 1, 1.5),
+        anomaly("saturation", 1.8, 3),
+        anomaly("voltage_drop", 2, 2.5),
+      ]),
+    ).toEqual([
+      { kind: "saturation", start: 1, end: 3 },
+      { kind: "voltage_drop", start: 2, end: 2.5 },
+    ]);
   });
 });
 

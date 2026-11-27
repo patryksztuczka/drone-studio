@@ -1,45 +1,30 @@
 import { useAtom } from "@effect/atom-react";
 import { Option } from "effect";
 
-import { FollowIcon, GhostIcon, OrbitIcon, XrayIcon } from "../../../shared/icons.tsx";
+import { GhostIcon, ShowcaseIcon } from "../../../shared/icons.tsx";
 import { Segmented } from "../../../shared/segmented.tsx";
-import { cameraMode, ghostRun, viewMode } from "../../../shared/studio.atoms.ts";
+import { cameraMode, ghostRun, showcase, viewMode } from "../../../shared/studio.atoms.ts";
 import type { CameraMode, ViewMode } from "../../../shared/studio.atoms.ts";
 
 export const ViewControls = () => {
   const [mode, setMode] = useAtom(viewMode);
   const [camera, setCamera] = useAtom(cameraMode);
   const [ghost, setGhost] = useAtom(ghostRun);
+  const [, setShowcase] = useAtom(showcase);
 
   return (
-    <div className="absolute top-3 right-3 flex items-center gap-2">
-      {Option.isSome(ghost) ? (
-        <button
-          type="button"
-          onClick={() => setGhost(Option.none())}
-          className="flex h-7 items-center gap-1.5 rounded-md border border-ghost/40 bg-[#0b0e14b3] px-2.5 text-[11px] text-ghost backdrop-blur hover:bg-[#a78bfa1a]"
-          title="Remove the ghost run"
-        >
-          <GhostIcon width={13} height={13} />
-          Ghost diff on
-        </button>
-      ) : null}
+    <div className="absolute top-5 right-5 z-10 flex items-center gap-2">
       <Segmented<ViewMode>
         label="View"
         value={mode}
         onChange={setMode}
-        className="bg-[#0b0e14b3] backdrop-blur"
+        hint="X"
         options={[
-          { value: "studio", label: "Studio", title: "Clean model (X toggles)" },
+          { value: "studio", label: "Studio", title: "Glass model (X toggles)" },
           {
             value: "xray",
-            label: (
-              <>
-                <XrayIcon width={12} height={12} />
-                X-Ray
-              </>
-            ),
-            title: "Translucent frame, thrust vectors, centre of mass, attitude target (X)",
+            label: "X-Ray",
+            title: "Thinner glass, thrust, centre of mass, setpoint and part callouts (X)",
           },
         ]}
       />
@@ -47,30 +32,36 @@ export const ViewControls = () => {
         label="Camera"
         value={camera}
         onChange={setCamera}
-        className="bg-[#0b0e14b3] backdrop-blur"
+        hint="C"
         options={[
-          {
-            value: "follow",
-            label: (
-              <>
-                <FollowIcon width={12} height={12} />
-                Follow
-              </>
-            ),
-            title: "Keep the drone in the centre (C)",
-          },
-          {
-            value: "orbit",
-            label: (
-              <>
-                <OrbitIcon width={12} height={12} />
-                Orbit
-              </>
-            ),
-            title: "Free orbit around a fixed point (C)",
-          },
+          { value: "follow", label: "Follow", title: "Keep the drone in the centre (C)" },
+          { value: "orbit", label: "Orbit", title: "Orbit a fixed point (C)" },
         ]}
       />
+      <button
+        type="button"
+        onClick={() => setShowcase(true)}
+        title="Only the drone, for a demo (F)"
+        className="flex cursor-pointer items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-[12px] leading-4 text-ink hover:border-ink"
+      >
+        <ShowcaseIcon />
+        Showcase
+        <kbd className="font-label text-[10px] leading-3 text-faint">F</kbd>
+      </button>
+      {Option.isSome(ghost) ? (
+        <button
+          type="button"
+          onClick={() => setGhost(Option.none())}
+          title="Remove the ghost run"
+          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-ghost bg-[#f3f0ff] px-3 py-1.5 text-[12px] leading-4 text-ghost"
+        >
+          <GhostIcon />
+          Ghost diff on
+          <span aria-hidden="true" className="text-[11px]">
+            ×
+          </span>
+        </button>
+      ) : null}
     </div>
   );
 };

@@ -11,16 +11,23 @@ import { activeSpectrum } from "../telemetry.atoms.ts";
 import { TimeChart } from "../time-chart.ts";
 import type { ChartSpec } from "../time-chart.ts";
 
-const CHART_HEIGHT = 128;
+const SPECTRUM_HEIGHT = 70;
 
 interface ChartCardProps {
   readonly title: string;
   readonly unit: string;
   readonly spec: ChartSpec;
   readonly digits: number;
+  readonly height: number;
 }
 
-const ChartCard = ({ title, unit, spec, digits }: ChartCardProps) => {
+const legendPrefix = (spec: ChartSpec, dashed: boolean | undefined) => {
+  if (dashed === true) return "-- ";
+
+  return spec.series.some((series) => series.dashed === true) ? "— " : "";
+};
+
+const ChartCard = ({ title, unit, spec, digits, height }: ChartCardProps) => {
   const registry = useContext(RegistryContext);
   const host = useRef<HTMLDivElement>(null);
   const values = useRef<Array<HTMLSpanElement | null>>([]);
@@ -30,10 +37,10 @@ const ChartCard = ({ title, unit, spec, digits }: ChartCardProps) => {
 
     if (element === null) return;
 
-    const chart = new TimeChart(element, spec, Math.max(element.clientWidth, 200), CHART_HEIGHT);
+    const chart = new TimeChart(element, spec, Math.max(element.clientWidth, 200), height);
 
     const stopObserving = observeSize(element, (width) =>
-      chart.resize(Math.max(width, 200), CHART_HEIGHT),
+      chart.resize(Math.max(width, 200), height),
     );
 
     let frame = 0;
@@ -71,43 +78,34 @@ const ChartCard = ({ title, unit, spec, digits }: ChartCardProps) => {
       stopObserving();
       chart.dispose();
     };
-  }, [registry, spec, digits]);
+  }, [registry, spec, digits, height]);
 
   return (
     <section
       aria-label={title}
-      className="rounded-lg border border-hairline bg-[#0d1118] px-2.5 pt-2 pb-1"
+      className="flex flex-col gap-1.5 border-b border-line px-5 pt-3.5 pb-3 font-label text-[11px] leading-[14px]"
     >
-      <header className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h3 className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground">
-          {title}
-        </h3>
-        <span className="font-mono text-[9px] text-faint">{unit}</span>
-        <div className="ml-auto flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-          {spec.series.map((series, index) => (
-            <span key={series.column} className="flex items-center gap-1 font-mono text-[10px]">
-              <span
-                className="inline-block h-0.5 w-2.5 rounded-full"
-                style={{
-                  background: series.dashed === true ? "transparent" : series.color,
-                  borderTop: series.dashed === true ? `1.5px dashed ${series.color}` : undefined,
-                }}
-              />
-              <span className="text-faint">{series.label}</span>
-              <span
-                ref={(element) => {
-                  values.current[index] = element;
-                }}
-                className="min-w-9 text-right tabular-nums"
-                style={{ color: series.color }}
-              >
-                –
-              </span>
-            </span>
-          ))}
-        </div>
+      <header className="flex justify-between">
+        <h3 className="font-normal text-ink-soft uppercase">{title}</h3>
+        <span className="text-faint">{unit}</span>
       </header>
-      <div ref={host} className="w-full" style={{ height: CHART_HEIGHT }} />
+      <div className="flex flex-wrap gap-x-3">
+        {spec.series.map((series, index) => (
+          <span key={series.column} className="whitespace-nowrap" style={{ color: series.color }}>
+            {legendPrefix(spec, series.dashed)}
+            {series.label}{" "}
+            <span
+              ref={(element) => {
+                values.current[index] = element;
+              }}
+              className="tabular-nums"
+            >
+              –
+            </span>
+          </span>
+        ))}
+      </div>
+      <div ref={host} className="w-full" style={{ height }} />
     </section>
   );
 };
@@ -122,10 +120,10 @@ const SpectrumCard = () => {
 
     if (element === null) return;
 
-    const created = new SpectrumChart(element, Math.max(element.clientWidth, 200), CHART_HEIGHT);
+    const created = new SpectrumChart(element, Math.max(element.clientWidth, 200), SPECTRUM_HEIGHT);
 
     const stopObserving = observeSize(element, (width) =>
-      created.resize(Math.max(width, 200), CHART_HEIGHT),
+      created.resize(Math.max(width, 200), SPECTRUM_HEIGHT),
     );
 
     chart.current = created;
@@ -157,50 +155,50 @@ const SpectrumCard = () => {
   return (
     <section
       aria-label="IMU vibration"
-      className="rounded-lg border border-hairline bg-[#0d1118] px-2.5 pt-2 pb-1"
+      className="flex flex-col gap-1.5 px-5 pt-3.5 pb-3 font-label text-[11px] leading-[14px]"
     >
-      <header className="mb-1 flex items-center gap-3">
-        <h3 className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground">
-          IMU VIBRATION FFT
-        </h3>
-        <span className="font-mono text-[9px] text-faint">1024 samples · dB</span>
-        <span className="ml-auto flex items-center gap-2.5 font-mono text-[10px]">
-          <span className="text-sim">accel z</span>
-          <span className="text-[#f472b6]">gyro x</span>
-          <span className="text-faint">
-            peak {peak === undefined ? "–" : `${peak.toFixed(1)} Hz`}
-          </span>
-        </span>
+      <header className="flex justify-between">
+        <h3 className="font-normal text-ink-soft">IMU VIBRATION FFT</h3>
+        <span className="text-faint">1024 samples · dB</span>
       </header>
-      <div ref={host} className="w-full" style={{ height: CHART_HEIGHT }} />
+      <div className="flex gap-3">
+        <span className="text-blue">accel z</span>
+        <span className="text-magenta">gyro x</span>
+        <span className="text-ink">peak {peak === undefined ? "–" : `${peak.toFixed(1)} Hz`}</span>
+      </div>
+      <div ref={host} className="w-full" style={{ height: SPECTRUM_HEIGHT }} />
+      <div className="flex justify-between text-[10px] leading-3 text-faint">
+        <span>0 Hz</span>
+        <span>250 Hz</span>
+      </div>
     </section>
   );
 };
 
 const ATTITUDE: ChartSpec = {
   series: [
-    { column: "roll", label: "roll", color: "#22d3ee" },
-    { column: "sp_roll", label: "sp", color: "#22d3ee", dashed: true },
-    { column: "pitch", label: "pitch", color: "#f5a524" },
-    { column: "sp_pitch", label: "sp", color: "#f5a524", dashed: true },
+    { column: "roll", label: "roll", color: "#0a6cff" },
+    { column: "sp_roll", label: "sp", color: "#0a6cff", dashed: true },
+    { column: "pitch", label: "pitch", color: "#e58a00" },
+    { column: "sp_pitch", label: "sp", color: "#e58a00", dashed: true },
   ],
   axes: [{ scale: "deg", unit: "°", side: "left" }],
 };
 
 const MOTORS: ChartSpec = {
   series: [
-    { column: "motor_1", label: "M1", color: "#22d3ee", scaleBy: 100 },
-    { column: "motor_2", label: "M2", color: "#a78bfa", scaleBy: 100 },
-    { column: "motor_3", label: "M3", color: "#f472b6", scaleBy: 100 },
-    { column: "motor_4", label: "M4", color: "#a3e635", scaleBy: 100 },
+    { column: "motor_1", label: "M1", color: "#0a6cff", scaleBy: 100 },
+    { column: "motor_2", label: "M2", color: "#7c5cff", scaleBy: 100 },
+    { column: "motor_3", label: "M3", color: "#d6409f", scaleBy: 100 },
+    { column: "motor_4", label: "M4", color: "#5e9e00", scaleBy: 100 },
   ],
   axes: [{ scale: "pct", unit: "%", side: "left", range: [0, 100] }],
 };
 
 const BATTERY: ChartSpec = {
   series: [
-    { column: "bat_v", label: "pack", color: "#10b981", scale: "volts" },
-    { column: "bat_a", label: "current", color: "#f5a524", scale: "amps" },
+    { column: "bat_v", label: "pack", color: "#12a150", scale: "volts" },
+    { column: "bat_a", label: "current", color: "#e58a00", scale: "amps" },
   ],
   axes: [
     { scale: "volts", unit: "V", side: "left" },
@@ -209,10 +207,16 @@ const BATTERY: ChartSpec = {
 };
 
 export const TelemetryPanel = () => (
-  <div className="flex flex-col gap-2.5">
-    <ChartCard title="ATTITUDE VS SETPOINT" unit="deg" spec={ATTITUDE} digits={1} />
-    <ChartCard title="MOTOR OUTPUTS" unit="% command" spec={MOTORS} digits={0} />
-    <ChartCard title="BATTERY" unit="V · A" spec={BATTERY} digits={2} />
+  <div className="flex flex-col">
+    <ChartCard title="Attitude vs setpoint" unit="deg" spec={ATTITUDE} digits={1} height={78} />
+    <ChartCard
+      title="Motor outputs"
+      unit="% command · 0–100"
+      spec={MOTORS}
+      digits={0}
+      height={78}
+    />
+    <ChartCard title="Battery" unit="V · A" spec={BATTERY} digits={2} height={70} />
     <SpectrumCard />
   </div>
 );

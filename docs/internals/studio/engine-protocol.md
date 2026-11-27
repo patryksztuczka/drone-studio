@@ -36,23 +36,26 @@ Decode them with `new Float32Array(buffer, 8)` and the column list. The engine s
 | `runs.load`        | `{ run_id, rate_hz? }` (default 100)                                                   | `{ meta, events, anomalies, t: [..], columns: { name: [..] } }`                                                                                                                           |
 | `runs.spectrum`    | `{ run_id, t? }`                                                                       | `{ freq_hz, accel_z, gyro_x }` over the 1024 samples before `t`                                                                                                                           |
 | `studio.focus`     | `{ run_id, t? }`                                                                       | `{ run_id, t, delivered_to }`; broadcasts the `studio.focus` notification                                                                                                                 |
-| `emu.status`       |                                                                                        | `{ docker, elf_built, repl, last_smoke, hint }`                                                                                                                                           |
+| `emu.status`       |                                                                                        | `{ docker, elf_built, repl, last_smoke, hint }`; `last_smoke` is the last `drone emu smoke` report (`.dev/emu-last.json`) or `null`                                                       |
+| `emu.smoke`        |                                                                                        | `{ started: true }`; runs `drone emu smoke` in the background and reports through `emu.smoke.started` and `emu.smoke.finished`                                                            |
 | `real.status`      |                                                                                        | `{ connected: false, policy: "read-only", detail }`                                                                                                                                       |
 
 Session status: `{ session_id, mode, scenario, t, duration_s, speed, paused, finished, rc, wall_s }`.
 
 ## Notifications
 
-| Method               | Params                                                                           |
-| -------------------- | -------------------------------------------------------------------------------- |
-| `sim.started`        | session status                                                                   |
-| `sim.status`         | session status, every 15 frames                                                  |
-| `sim.events`         | `{ session_id, events: [{ t, kind, data }] }`                                    |
-| `sim.finished`       | the `sim.stop` result; scenario sessions stop and record on their own at the end |
-| `sim.error`          | `{ message }`                                                                    |
-| `telemetry.spectrum` | `{ session_id, freq_hz, accel_z, gyro_x }` every 30 frames                       |
-| `runs.changed`       | `{}` after a run is recorded                                                     |
-| `studio.focus`       | `{ run_id, t }`: load the run in the Time Machine and seek to `t`                |
+| Method               | Params                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `sim.started`        | session status                                                                                                                       |
+| `sim.status`         | session status, every 15 frames                                                                                                      |
+| `sim.events`         | `{ session_id, events: [{ t, kind, data }] }`                                                                                        |
+| `sim.finished`       | the `sim.stop` result; scenario sessions stop and record on their own at the end                                                     |
+| `sim.error`          | `{ message }`                                                                                                                        |
+| `telemetry.spectrum` | `{ session_id, freq_hz, accel_z, gyro_x }` every 30 frames                                                                           |
+| `runs.changed`       | `{}` after a run is recorded                                                                                                         |
+| `studio.focus`       | `{ run_id, t }`: load the run in the Time Machine and seek to `t`                                                                    |
+| `emu.smoke.started`  | `{}` when an `emu.smoke` request starts the smoke test                                                                               |
+| `emu.smoke.finished` | the smoke report: `{ ok, elf, elf_bytes, image, tests, uart_log_tail, duration_s }`, or `{ ok: false, error }` when it could not run |
 
 Event kinds include `ARM`, `DISARM`, `ARM_REJECTED`, `FAILSAFE`, `LANDED`, `TOUCHDOWN`, `GUST_START`, `GUST_END`, `FAULT`, `FAULT_CLEARED`, `SATURATION`, `SATURATION_END`, `BATTERY_WARNING`, `BATTERY_CRITICAL`, `RC_LOST`, `CRASH` and `ASSERT_FAIL`.
 

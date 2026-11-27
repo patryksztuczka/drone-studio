@@ -1,4 +1,6 @@
-export type EventTone = "arm" | "gust" | "warn" | "danger" | "info" | "fault";
+import { PALETTE } from "./palette.ts";
+
+export type EventTone = "arm" | "gust" | "warn" | "danger" | "fault" | "info";
 
 const TONES: ReadonlyMap<string, EventTone> = new Map([
   ["ARM", "arm"],
@@ -23,15 +25,17 @@ const TONES: ReadonlyMap<string, EventTone> = new Map([
 export const eventTone = (kind: string): EventTone => TONES.get(kind) ?? "info";
 
 const COLORS: Readonly<Record<EventTone, string>> = {
-  arm: "#22d3ee",
-  gust: "#7dd3fc",
-  warn: "#f5a524",
-  danger: "#f05252",
-  fault: "#f472b6",
-  info: "#7b8698",
+  arm: PALETTE.ink,
+  gust: PALETTE.gust,
+  warn: PALETTE.amber,
+  danger: PALETTE.fail,
+  fault: PALETTE.magenta,
+  info: PALETTE.ink,
 };
 
 export const eventColor = (kind: string) => COLORS[eventTone(kind)];
+
+export const eventLabel = (kind: string) => kind.replace("_START", "");
 
 const MARKED: ReadonlySet<EventTone> = new Set(["arm", "gust", "warn", "danger", "fault"]);
 

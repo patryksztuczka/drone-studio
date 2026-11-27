@@ -2,7 +2,14 @@ import { LayoutPartId } from "@drone-studio/engine-client";
 import type { LayoutPad } from "@drone-studio/engine-client";
 import { describe, expect, it } from "vite-plus/test";
 
-import { frequencyLabel, highlightFor, padEdge, padFunction, toBoard } from "./board-geometry.ts";
+import {
+  busDetail,
+  frequencyLabel,
+  highlightFor,
+  padEdge,
+  padFunction,
+  toBoard,
+} from "./board-geometry.ts";
 import type { BoardParts } from "./board-geometry.ts";
 
 const id = (name: string) => LayoutPartId.make(name);
@@ -89,5 +96,22 @@ describe("board geometry", () => {
   it("prints bus clocks in the unit a datasheet would use", () => {
     expect(frequencyLabel(24_000_000)).toBe("24 MHz");
     expect(frequencyLabel(400_000)).toBe("400 kHz");
+  });
+
+  it("describes a bus with its clock and pins, clock line first", () => {
+    expect(
+      busDetail({
+        id: id("spi1"),
+        kind: "spi",
+        peripheral: "spi1",
+        frequency_hz: 24_000_000,
+        devices: [],
+        pins: [
+          { pin: "PA6", role: "miso" },
+          { pin: "PD7", role: "mosi" },
+          { pin: "PA5", role: "sck" },
+        ],
+      }),
+    ).toBe("SPI1 · 24 MHz · SCK PA5 · MISO PA6 · MOSI PD7");
   });
 });

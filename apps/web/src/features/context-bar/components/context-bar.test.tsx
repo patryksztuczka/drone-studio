@@ -8,7 +8,7 @@ import { ContextBar } from "./context-bar.tsx";
 const unreachable = [[engineLayer, EngineConnection.layerAt("ws://127.0.0.1:9")]] as const;
 
 describe("ContextBar", () => {
-  it("offers the three targets, the transport and manual flight", () => {
+  it("offers the three targets, the speed and the transport", () => {
     render(
       <RegistryProvider initialValues={unreachable}>
         <ContextBar />
@@ -19,7 +19,8 @@ describe("ContextBar", () => {
     expect(screen.getByRole("radio", { name: "EMU" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "REAL" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Manual flight/ })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Speed" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
   });
 
   it("says the engine is offline when nothing answers at its URL", async () => {

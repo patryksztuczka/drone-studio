@@ -1,13 +1,13 @@
-import type { FlightEvent } from "@drone-studio/engine-client";
 import { cn } from "@drone-studio/ui/lib/utils";
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
-import { Option, Schema } from "effect";
+import { Option } from "effect";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { PointerEvent } from "react";
+import type { KeyboardEvent, PointerEvent } from "react";
 
-import { eventColor, eventTone } from "../../../shared/event-style.ts";
+import { eventColor, eventLabel } from "../../../shared/event-style.ts";
 import { clock, fixed } from "../../../shared/format.ts";
 import { PauseIcon, PlayIcon, ResetIcon } from "../../../shared/icons.tsx";
+import { PALETTE } from "../../../shared/palette.ts";
 import {
   activeFlight,
   activeRunLoading,
@@ -21,19 +21,28 @@ import {
   anomalyBands,
   fractionOf,
   labelledMarkers,
-  latestEventIndex,
   liveSpanEnd,
   rulerTicks,
+  seekStep,
   timeAt,
   timelineMarkers,
 } from "../timeline-math.ts";
 import type { Span } from "../timeline-math.ts";
+import { plotY, seriesPath, valueRange } from "../timeline-plot.ts";
 import { seekTo } from "./use-playback.ts";
 
-const BAND_COLORS: ReadonlyMap<string, string> = new Map([
-  ["GUST_START", "#7dd3fc"],
-  ["SATURATION", "#f5a524"],
-  ["FAULT", "#f472b6"],
+const HEIGHT = 141;
+
+const TOP = 22;
+
+const BOTTOM = 118;
+
+const PLOTTED = "height";
+
+const BAND_FILLS: ReadonlyMap<string, string> = new Map([
+  ["GUST_START", "#38a3e81a"],
+  ["SATURATION", "#e58a0024"],
+  ["FAULT", "#d6409f1a"],
 ]);
 
 const spanOf = (flight: FlightView): Span => ({
@@ -64,15 +73,20 @@ const useTrackWidth = () => {
   return { element, width };
 };
 
+const tickLabel = (tick: number) =>
+  tick >= 60 ? clock(tick).slice(0, 5) : `${fixed(tick, tick % 1 === 0 ? 0 : 1)}s`;
+
 interface TrackProps {
   readonly flight: FlightView;
+  readonly ghost: Option.Option<FlightView>;
   readonly t: number;
 }
 
-const Track = ({ flight, t }: TrackProps) => {
+const Track = ({ flight, ghost, t }: TrackProps) => {
   const registry = useContext(RegistryContext);
   const { element, width } = useTrackWidth();
   const span = spanOf(flight);
+  const x = (time: number) => fractionOf(time, span) * width;
 
   const markers = useMemo(
     () => timelineMarkers(flight.events, flight.table.endTime),
@@ -80,21 +94,62 @@ const Track = ({ flight, t }: TrackProps) => {
   );
 
   const anomalies = useMemo(() => anomalyBands(flight.anomalies), [flight.anomalies]);
-  const ticks = rulerTicks(span, width);
-  const recorded = fractionOf(flight.table.endTime, span);
-  const head = fractionOf(t, span);
+
+  const namedAnomalies = labelledMarkers(
+    anomalies.map((band) => band.start),
+    span,
+    width,
+    150,
+  );
+
+  const ticks = rulerTicks(span, width, 60);
+  const head = x(t);
+  const recorded = x(flight.table.endTime);
 
   const named = labelledMarkers(
     markers.points.map((event) => event.t),
     span,
     width,
+    70,
   );
 
+  const box = { width, top: TOP + 8, bottom: BOTTOM - 14 };
+
+  const comparison = Option.map(ghost, (other) => {
+    const range = valueRange([flight.table, other.table], PLOTTED, span.end);
+
+    return {
+      candidate: seriesPath(flight.table, PLOTTED, span, range, box),
+      baseline: seriesPath(other.table, PLOTTED, span, range, box),
+      label: plotY(other.table.sample(PLOTTED, span.end), range, box),
+    };
+  });
+
+  const labelled = new Set([
+    ticks[0],
+    ticks[Math.round((ticks.length - 1) / 2)],
+    ticks[ticks.length - 1],
+  ]);
+
   const seekFromPointer = (event: PointerEvent<HTMLDivElement>) => {
-    const box = event.currentTarget.getBoundingClientRect();
-    const fraction = (event.clientX - box.left) / Math.max(box.width, 1);
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const fraction = (event.clientX - bounds.left) / Math.max(bounds.width, 1);
 
     seekTo(registry, Math.min(timeAt(fraction, span), flight.table.endTime));
+  };
+
+  const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    seekTo(
+      registry,
+      seekStep(t, event.key === "ArrowLeft" ? -1 : 1, event.shiftKey, {
+        start: span.start,
+        end: flight.table.endTime,
+      }),
+    );
   };
 
   return (
@@ -107,7 +162,9 @@ const Track = ({ flight, t }: TrackProps) => {
       aria-valuemax={span.end}
       aria-valuenow={Number(t.toFixed(2))}
       aria-valuetext={clock(t)}
-      className="group relative h-full min-w-0 flex-1 cursor-ew-resize touch-none select-none outline-none"
+      className="relative min-w-0 flex-1 cursor-ew-resize touch-none outline-none select-none"
+      style={{ height: HEIGHT }}
+      onKeyDown={onKey}
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture(event.pointerId);
         seekFromPointer(event);
@@ -116,185 +173,135 @@ const Track = ({ flight, t }: TrackProps) => {
         if (event.currentTarget.hasPointerCapture(event.pointerId)) seekFromPointer(event);
       }}
     >
-      <div className="absolute inset-x-0 top-0 h-4">
-        {ticks.map((tick) => (
-          <span
-            key={tick}
-            className="absolute top-0 -translate-x-1/2 font-mono text-[9px] text-faint tabular-nums"
-            style={{ left: `${String(fractionOf(tick, span) * 100)}%` }}
-          >
-            {tick >= 60 ? clock(tick).slice(0, 5) : `${fixed(tick, tick % 1 === 0 ? 0 : 1)}s`}
-          </span>
-        ))}
-      </div>
-      <div className="absolute inset-x-0 top-5 bottom-1 overflow-hidden rounded-md border border-hairline bg-[#0d1118]">
-        {ticks.map((tick) => (
-          <span
-            key={tick}
-            className="absolute inset-y-0 w-px bg-hairline"
-            style={{ left: `${String(fractionOf(tick, span) * 100)}%` }}
-          />
-        ))}
-        <div
-          className="absolute inset-y-0 left-0 bg-[linear-gradient(90deg,#22d3ee0f,#22d3ee1f)]"
-          style={{ width: `${String(recorded * 100)}%` }}
+      <svg
+        width={width}
+        height={HEIGHT}
+        viewBox={`0 0 ${String(Math.max(width, 1))} ${String(HEIGHT)}`}
+        className="absolute inset-0 overflow-visible"
+        aria-hidden="true"
+      >
+        <rect
+          x={0.5}
+          y={TOP}
+          width={Math.max(width - 1, 0)}
+          height={BOTTOM - TOP}
+          fill="#ffffff"
+          stroke={PALETTE.line}
         />
+        <rect x={0} y={TOP} width={recorded} height={BOTTOM - TOP} fill="#0a6cff08" />
         {markers.bands.map((band) => (
-          <div
+          <rect
             key={`${band.kind}-${String(band.start)}`}
-            title={`${band.kind.replace("_START", "")} ${fixed(band.start, 2)}–${fixed(band.end, 2)} s`}
-            className="absolute top-1 bottom-1 rounded-sm"
-            style={{
-              left: `${String(fractionOf(band.start, span) * 100)}%`,
-              width: `${String(Math.max((fractionOf(band.end, span) - fractionOf(band.start, span)) * 100, 0.3))}%`,
-              background: `${BAND_COLORS.get(band.kind) ?? "#7b8698"}22`,
-              borderTop: `1.5px solid ${BAND_COLORS.get(band.kind) ?? "#7b8698"}88`,
-            }}
+            x={x(band.start)}
+            y={TOP}
+            width={Math.max(x(band.end) - x(band.start), 1)}
+            height={BOTTOM - TOP}
+            fill={BAND_FILLS.get(band.kind) ?? "#1111110a"}
           />
         ))}
         {anomalies.map((band) => (
-          <div
-            key={`${band.kind}-${String(band.start)}`}
-            title={`anomaly: ${band.kind}`}
-            className="absolute bottom-0 h-[3px] bg-emu/70"
-            style={{
-              left: `${String(fractionOf(band.start, span) * 100)}%`,
-              width: `${String(Math.max((fractionOf(band.end, span) - fractionOf(band.start, span)) * 100, 0.4))}%`,
-            }}
+          <rect
+            key={`anomaly-${band.kind}-${String(band.start)}`}
+            x={x(band.start)}
+            y={BOTTOM - 6}
+            width={Math.max(x(band.end) - x(band.start), 3)}
+            height={6}
+            fill="#e58a00b3"
           />
         ))}
-        {markers.points.map((event, index) => (
+        {Option.match(comparison, {
+          onNone: () => null,
+          onSome: (paths) => (
+            <>
+              <path d={paths.baseline} fill="none" stroke={PALETTE.ghost} strokeDasharray="4 3" />
+              <path d={paths.candidate} fill="none" stroke={PALETTE.blue} strokeWidth={1.4} />
+            </>
+          ),
+        })}
+        {markers.points.map((event, index) => {
+          const at = x(event.t);
+          const color = eventColor(event.kind);
+
+          return (
+            <g key={`${event.kind}-${String(event.t)}-${String(index)}`}>
+              <path
+                d={`M${at.toFixed(1)} ${String(TOP)}V${String(BOTTOM)}`}
+                stroke={color === PALETTE.ink ? "#11111159" : `${color}99`}
+              />
+              <path
+                d={`M${String(at - 4)} ${String(TOP)}L${String(at)} ${String(TOP - 4)}L${String(at + 4)} ${String(TOP)}L${String(at)} ${String(TOP + 4)}Z`}
+                fill={color}
+              />
+            </g>
+          );
+        })}
+        {ticks.map((tick) => (
+          <path
+            key={tick}
+            d={`M${x(tick).toFixed(1)} ${String(BOTTOM)}V${String(BOTTOM + (labelled.has(tick) ? 6 : 4))}`}
+            stroke={PALETTE.lineStrong}
+          />
+        ))}
+        <path d={`M${head.toFixed(1)} 8V128`} stroke={PALETTE.blue} strokeWidth={1.5} />
+        <path
+          d={`M${String(head - 6)} 8H${String(head + 6)}L${String(head)} 15Z`}
+          fill={PALETTE.blue}
+        />
+      </svg>
+      {markers.points.map((event, index) =>
+        named[index] === true ? (
           <button
             key={`${event.kind}-${String(event.t)}-${String(index)}`}
             type="button"
-            title={`${event.kind} at ${fixed(event.t, 2)} s`}
             aria-label={`${event.kind} at ${fixed(event.t, 2)} seconds`}
+            title={`${event.kind} at ${fixed(event.t, 2)} s`}
             onPointerDown={(pointer) => pointer.stopPropagation()}
             onClick={() => seekTo(registry, event.t)}
-            className="absolute top-0 bottom-0 flex w-3 -translate-x-1/2 flex-col items-center"
-            style={{ left: `${String(fractionOf(event.t, span) * 100)}%` }}
+            className="absolute top-[28px] cursor-pointer font-label text-[10px] leading-3 whitespace-nowrap hover:underline"
+            style={{ left: x(event.t) + 6, color: eventColor(event.kind) }}
           >
-            <span className="w-px flex-1" style={{ background: `${eventColor(event.kind)}99` }} />
-            <span
-              className="absolute top-1 size-[7px] rotate-45 rounded-[1px]"
-              style={{
-                background: eventColor(event.kind),
-                boxShadow: `0 0 8px ${eventColor(event.kind)}`,
-              }}
-            />
-            {named[index] === true ? (
-              <span
-                className="absolute top-3.5 left-2 font-mono text-[8.5px] font-medium tracking-wide whitespace-nowrap opacity-80"
-                style={{ color: eventColor(event.kind) }}
-              >
-                {event.kind.replace("_START", "")}
-              </span>
-            ) : null}
+            {eventLabel(event.kind)}
           </button>
-        ))}
-      </div>
-      <div
-        className="pointer-events-none absolute top-4 bottom-0 w-px bg-sim shadow-[0_0_10px_#22d3ee]"
-        style={{ left: `${String(head * 100)}%` }}
-      >
-        <span className="absolute -top-1 left-1/2 size-2.5 -translate-x-1/2 rotate-45 rounded-[2px] bg-sim" />
-      </div>
+        ) : null,
+      )}
+      {anomalies.map((band, index) =>
+        namedAnomalies[index] === true ? (
+          <span
+            key={`anomaly-label-${band.kind}-${String(band.start)}`}
+            className="pointer-events-none absolute top-[96px] font-label text-[9px] leading-3 whitespace-nowrap text-amber"
+            style={{ left: x(band.start) + 6 }}
+          >
+            anomaly: {band.kind}
+          </span>
+        ) : null,
+      )}
+      {Option.match(comparison, {
+        onNone: () => null,
+        onSome: (paths) => (
+          <span
+            className="pointer-events-none absolute right-4 font-label text-[10px] leading-3 text-ghost"
+            style={{ top: Math.min(Math.max(paths.label - 16, TOP + 2), BOTTOM - 26) }}
+          >
+            ghost
+          </span>
+        ),
+      })}
+      {ticks.map((tick) =>
+        labelled.has(tick) ? (
+          <span
+            key={tick}
+            className={cn(
+              "pointer-events-none absolute top-[127px] font-label text-[10px] leading-3 whitespace-pre text-faint",
+              tick === ticks[ticks.length - 1] && ticks.length > 1 ? "-translate-x-full" : "",
+              tick !== ticks[0] && tick !== ticks[ticks.length - 1] ? "-translate-x-1/2" : "",
+            )}
+            style={{ left: x(tick) }}
+          >
+            {tickLabel(tick)}
+          </span>
+        ) : null,
+      )}
     </div>
-  );
-};
-
-interface ConsoleProps {
-  readonly events: ReadonlyArray<FlightEvent>;
-  readonly t: number;
-}
-
-const EventData = Schema.Struct({
-  level: Schema.optional(Schema.String),
-  args: Schema.optional(Schema.Array(Schema.Number)),
-  wind_mps: Schema.optional(Schema.Array(Schema.Number)),
-});
-
-const decodeEventData = Schema.decodeUnknownOption(EventData);
-
-const LEVEL_COLORS: ReadonlyMap<string, string> = new Map([
-  ["error", "#f05252"],
-  ["warn", "#f5a524"],
-]);
-
-const levelOf = (event: FlightEvent) =>
-  Option.getOrElse(
-    Option.flatMap(decodeEventData(event.data), (data) => Option.fromUndefinedOr(data.level)),
-    () => (eventTone(event.kind) === "danger" ? "error" : "info"),
-  );
-
-const detailOf = (event: FlightEvent) =>
-  Option.match(decodeEventData(event.data), {
-    onNone: () => "",
-    onSome: (data) => {
-      if (data.wind_mps !== undefined) {
-        return `wind ${data.wind_mps.map((value) => value.toFixed(2)).join(" ")} m/s`;
-      }
-
-      return data.args === undefined ? "" : `args ${data.args.join(", ")}`;
-    },
-  });
-
-const EventConsole = ({ events, t }: ConsoleProps) => {
-  const registry = useContext(RegistryContext);
-  const list = useRef<HTMLOListElement>(null);
-  const latest = latestEventIndex(events, t);
-
-  useEffect(() => {
-    const item = list.current?.querySelector<HTMLElement>(`[data-index="${String(latest)}"]`);
-
-    item?.scrollIntoView({ block: "nearest" });
-  }, [latest]);
-
-  return (
-    <section
-      aria-label="Firmware log"
-      className="flex min-h-0 w-[min(40%,460px)] shrink-0 flex-col border-l border-hairline"
-    >
-      <header className="flex h-7 items-center justify-between px-3 text-[10px] font-medium tracking-[0.14em] text-faint">
-        <span>FIRMWARE LOG</span>
-        <span className="font-mono tracking-normal">
-          {String(latest + 1)}/{String(events.length)}
-        </span>
-      </header>
-      <ol ref={list} className="min-h-0 flex-1 overflow-y-auto px-1 pb-1.5 font-mono text-[11px]">
-        {events.length === 0 ? <li className="px-2 py-1 text-faint">No events yet.</li> : null}
-        {events.map((event, index) => {
-          const future = index > latest;
-          const level = levelOf(event);
-
-          return (
-            <li key={`${String(event.t)}-${event.kind}-${String(index)}`} data-index={index}>
-              <button
-                type="button"
-                onClick={() => seekTo(registry, event.t)}
-                className={cn(
-                  "flex w-full items-baseline gap-2 rounded px-2 py-[3px] text-left hover:bg-panel-raised",
-                  index === latest ? "bg-[#22d3ee12]" : undefined,
-                  future ? "opacity-35" : undefined,
-                )}
-              >
-                <span className="w-14 shrink-0 text-faint tabular-nums">{fixed(event.t, 3)}</span>
-                <span
-                  className="w-10 shrink-0 text-[9px] uppercase"
-                  style={{ color: LEVEL_COLORS.get(level) ?? "#4a5466" }}
-                >
-                  {level}
-                </span>
-                <span className="shrink-0" style={{ color: eventColor(event.kind) }}>
-                  {event.kind}
-                </span>
-                <span className="truncate text-muted-foreground">{detailOf(event)}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
   );
 };
 
@@ -305,104 +312,80 @@ export const TimeMachine = () => {
   const t = useAtomValue(playhead);
   const following = useAtomValue(followLive);
   const transport = useTransport();
+  const live = transport.live && following;
 
   return (
-    <footer
-      aria-label="Flight Time Machine"
-      className="flex h-[152px] shrink-0 border-t border-hairline bg-panel"
-    >
-      <div className="flex min-w-0 flex-1 flex-col gap-2 px-3 pt-2 pb-2">
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-semibold tracking-[0.16em] text-faint">
-            FLIGHT TIME MACHINE
-          </span>
-          <span className="font-mono text-[11px] text-muted-foreground">
+    <footer aria-label="Flight Time Machine" className="flex h-[175px] gap-6 px-5 pt-4 pb-[18px]">
+      <div className="flex w-[176px] shrink-0 flex-col justify-between">
+        <div className="flex flex-col gap-[3px] font-label text-[11px] leading-[14px]">
+          <h2 className="font-normal text-ink-soft">FLIGHT TIME MACHINE</h2>
+          <p className="text-muted">
             {Option.match(flight, {
               onNone: () => (loading ? "loading run…" : "no flight yet: press Play or open a run"),
-              onSome: (view) => (view.live ? `LIVE · ${view.label}` : `REPLAY · ${view.label}`),
+              onSome: (view) => `${view.live ? "LIVE" : "REPLAY"} · ${view.label}`,
             })}
-          </span>
-          {Option.isSome(ghost) ? (
-            <span className="font-mono text-[11px] text-ghost">vs ghost · {ghost.value.label}</span>
-          ) : null}
-          <span className="ml-auto flex items-center gap-2">
-            {transport.live ? (
-              <button
-                type="button"
-                onClick={transport.goLive}
-                className={cn(
-                  "flex h-6 items-center gap-1.5 rounded-md border px-2 font-mono text-[10px] tracking-[0.14em]",
-                  following
-                    ? "border-[#f0525255] text-[#fca5a5]"
-                    : "border-hairline text-muted-foreground hover:text-foreground",
-                )}
-                title="Follow the live session (L)"
-              >
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full",
-                    following ? "animate-pulse bg-danger" : "bg-faint",
-                  )}
-                />
-                LIVE
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={transport.goLive}
-                className="flex h-6 items-center rounded-md border border-hairline px-2 font-mono text-[10px] tracking-[0.14em] text-muted-foreground hover:text-foreground"
-                title="Back to the live session (L)"
-              >
-                BACK TO LIVE
-              </button>
-            )}
-          </span>
+          </p>
+          {Option.isSome(ghost) ? <p className="text-ghost">vs ghost · base</p> : null}
         </div>
-        <div className="flex min-h-0 flex-1 items-stretch gap-3">
-          <div className="flex shrink-0 flex-col justify-center gap-1.5">
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={transport.toggle}
-                aria-label={transport.playing ? "Pause" : "Play"}
-                className="flex size-8 items-center justify-center rounded-md bg-sim/15 text-sim hover:bg-sim/25"
-              >
-                {transport.playing ? <PauseIcon /> : <PlayIcon />}
-              </button>
-              <button
-                type="button"
-                onClick={transport.reset}
-                aria-label="Reset"
-                className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-panel-raised hover:text-foreground"
-              >
-                <ResetIcon />
-              </button>
-            </div>
-            <span className="font-mono text-[13px] text-foreground tabular-nums">
-              {clock(t)}
-              <span className="text-faint">
-                {" / "}
-                {Option.match(flight, {
-                  onNone: () => clock(0),
-                  onSome: (view) => clock(spanOf(view).end),
-                })}
-              </span>
+        <div className="flex flex-col gap-2">
+          <p className="font-label text-[16px] leading-5 whitespace-pre text-ink tabular-nums">
+            {clock(t)}{" "}
+            <span className="text-faint">
+              /{" "}
+              {Option.match(flight, {
+                onNone: () => clock(0),
+                onSome: (view) => clock(spanOf(view).end),
+              })}
             </span>
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={transport.toggle}
+              aria-label={transport.playing ? "Pause" : "Play"}
+              className="flex size-[30px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink text-white hover:bg-ink-soft"
+            >
+              {transport.playing ? <PauseIcon /> : <PlayIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={transport.reset}
+              aria-label="Reset"
+              className="flex size-[30px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-surface text-ink hover:border-ink"
+            >
+              <ResetIcon className="size-3" />
+            </button>
+            <button
+              type="button"
+              onClick={transport.goLive}
+              title={live ? "Following the live session (L)" : "Back to the live session (L)"}
+              className={cn(
+                "flex h-[30px] cursor-pointer items-center gap-1.5 rounded-full border bg-surface px-2.5 font-label text-[11px] leading-[14px] whitespace-pre",
+                live ? "border-fail text-fail" : "border-line-strong text-ink",
+              )}
+            >
+              <span
+                className={cn(
+                  "size-1.5 rounded-[3px]",
+                  live ? "animate-pulse bg-fail" : "bg-faint",
+                )}
+              />
+              {transport.live ? "LIVE" : "BACK TO LIVE"}
+              <kbd className="text-[10px] leading-3 text-faint">L</kbd>
+            </button>
           </div>
-          {Option.match(flight, {
-            onNone: () => (
-              <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-hairline font-mono text-[11px] text-faint">
-                The timeline fills as the drone flies.
-              </div>
-            ),
-            onSome: (view) => <Track flight={view} t={t} />,
-          })}
         </div>
       </div>
-      <EventConsole
-        events={Option.match(flight, { onNone: () => [], onSome: (view) => view.events })}
-        t={t}
-      />
+      {Option.match(flight, {
+        onNone: () => (
+          <div className="mt-[22px] flex h-24 min-w-0 flex-1 items-center justify-center border border-dashed border-line-strong">
+            <p className="text-[13px] leading-4 text-muted">
+              The timeline fills as the drone flies.
+            </p>
+          </div>
+        ),
+        onSome: (view) => <Track flight={view} ghost={ghost} t={t} />,
+      })}
     </footer>
   );
 };

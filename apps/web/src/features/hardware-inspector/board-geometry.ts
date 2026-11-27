@@ -96,3 +96,20 @@ export const frequencyLabel = (hz: number) => {
 
   return `${String(hz)} Hz`;
 };
+
+const PIN_ORDER = ["sck", "miso", "mosi", "scl", "sda", "tx", "rx"];
+
+const pinRank = (role: string) => {
+  const index = PIN_ORDER.indexOf(role);
+
+  return index === -1 ? PIN_ORDER.length : index;
+};
+
+export const busDetail = (bus: LayoutBus) =>
+  [
+    bus.peripheral.toUpperCase(),
+    frequencyLabel(bus.frequency_hz),
+    ...[...bus.pins]
+      .sort((a, b) => pinRank(a.role) - pinRank(b.role))
+      .map((pin) => `${pin.role.toUpperCase()} ${pin.pin}`),
+  ].join(" · ");

@@ -1,20 +1,9 @@
-import {
-  Color,
-  DoubleSide,
-  LineBasicMaterial,
-  MeshBasicMaterial,
-  MeshPhysicalMaterial,
-  MeshStandardMaterial,
-} from "three";
+import { DoubleSide, LineBasicMaterial, MeshBasicMaterial, MeshPhysicalMaterial } from "three";
 import type { Material } from "three";
 
-export type DroneTone = "studio" | "xray" | "ghost" | "target";
+import { PALETTE } from "../../../shared/palette.ts";
 
-export interface DroneColors {
-  readonly accent: string;
-  readonly ducts: string;
-  readonly frame: string;
-}
+export type DroneTone = "studio" | "xray" | "ghost" | "target";
 
 export interface DroneMaterials {
   readonly frame: Material;
@@ -40,24 +29,40 @@ export interface DroneMaterials {
   readonly all: ReadonlyArray<Material>;
 }
 
-const XRAY_SHELL = "#22d3ee";
-
-const translucent = (color: string, opacity: number) =>
-  new MeshBasicMaterial({
+const glass = (color: string, opacity: number) =>
+  new MeshPhysicalMaterial({
     color,
     transparent: true,
     opacity,
+    roughness: 0.18,
+    metalness: 0,
+    clearcoat: 0.8,
+    clearcoatRoughness: 0.2,
+    emissive: color,
+    emissiveIntensity: 0.18,
     depthWrite: false,
     side: DoubleSide,
   });
 
-const glowing = (color: string, intensity: number) =>
-  new MeshStandardMaterial({
-    color: new Color(color).multiplyScalar(0.35),
-    emissive: new Color(color),
-    emissiveIntensity: intensity,
-    roughness: 0.4,
-    metalness: 0.1,
+const flat = (color: string, opacity: number) =>
+  new MeshBasicMaterial({
+    color,
+    transparent: opacity < 1,
+    opacity,
+    depthWrite: opacity >= 1,
+    side: DoubleSide,
+  });
+
+const edgeLines = (color: string, opacity: number) =>
+  new LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+
+const disc = (color: string) =>
+  new MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: DoubleSide,
   });
 
 const withAll = (materials: Omit<DroneMaterials, "all">): DroneMaterials => ({
@@ -65,134 +70,88 @@ const withAll = (materials: Omit<DroneMaterials, "all">): DroneMaterials => ({
   all: Object.values(materials),
 });
 
-const studioMaterials = (colors: DroneColors) =>
+const studioMaterials = () =>
   withAll({
-    frame: new MeshPhysicalMaterial({
-      color: colors.frame,
-      roughness: 0.48,
-      metalness: 0.15,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.35,
-    }),
-    ducts: new MeshPhysicalMaterial({
-      color: colors.ducts,
-      roughness: 0.55,
-      metalness: 0.05,
-      clearcoat: 0.3,
-      side: DoubleSide,
-    }),
-    motor: new MeshStandardMaterial({ color: "#3a414c", roughness: 0.35, metalness: 0.85 }),
-    motorBell: new MeshStandardMaterial({ color: "#aeb6c2", roughness: 0.22, metalness: 0.95 }),
-    accent: glowing(colors.accent, 1.4),
-    blade: new MeshPhysicalMaterial({
-      color: "#0e1117",
-      roughness: 0.3,
-      metalness: 0,
-      transparent: true,
-      opacity: 0.92,
-    }),
-    disc: new MeshBasicMaterial({
-      color: "#9fb4c8",
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      side: DoubleSide,
-    }),
-    pcb: new MeshStandardMaterial({ color: "#0c2219", roughness: 0.6, metalness: 0.2 }),
-    chip: new MeshStandardMaterial({ color: "#14161b", roughness: 0.35, metalness: 0.3 }),
-    imu: new MeshStandardMaterial({ color: "#1a1c22", roughness: 0.4, metalness: 0.3 }),
-    baro: new MeshStandardMaterial({ color: "#b9c0c9", roughness: 0.3, metalness: 0.9 }),
-    battery: new MeshPhysicalMaterial({
-      color: "#161a22",
-      roughness: 0.42,
-      metalness: 0.1,
-      clearcoat: 0.8,
-    }),
-    batteryLabel: glowing("#f5a524", 0.45),
-    camera: new MeshStandardMaterial({ color: "#0f1115", roughness: 0.5, metalness: 0.3 }),
-    lens: new MeshPhysicalMaterial({
-      color: "#0a1622",
-      roughness: 0.05,
-      metalness: 0.4,
-      clearcoat: 1,
-    }),
-    receiver: new MeshStandardMaterial({ color: "#22262e", roughness: 0.6 }),
-    antenna: glowing(colors.accent, 0.9),
-    noseLight: glowing("#22d3ee", 2.2),
-    tailLight: glowing("#f05252", 1.8),
-    edges: new LineBasicMaterial({ color: "#2c3646", transparent: true, opacity: 0 }),
+    frame: glass(PALETTE.blueGlass, 0.62),
+    ducts: glass(PALETTE.blueMist, 0.3),
+    motor: glass(PALETTE.blue, 0.75),
+    motorBell: glass("#3d9bff", 0.7),
+    accent: flat(PALETTE.blue, 1),
+    blade: flat(PALETTE.blue, 0.42),
+    disc: disc(PALETTE.blueGlass),
+    pcb: glass("#bfe3ff", 0.7),
+    chip: glass(PALETTE.blue, 0.85),
+    imu: glass("#e6f4ff", 0.95),
+    baro: glass(PALETTE.blueGlass, 0.9),
+    battery: glass("#6bb8ff", 0.42),
+    batteryLabel: glass(PALETTE.blue, 0.55),
+    camera: glass("#8ccbff", 0.5),
+    lens: glass(PALETTE.blue, 0.8),
+    receiver: glass("#8ccbff", 0.5),
+    antenna: flat(PALETTE.blue, 0.9),
+    noseLight: flat(PALETTE.blue, 1),
+    tailLight: flat(PALETTE.fail, 1),
+    edges: edgeLines(PALETTE.blue, 0.85),
   });
 
-const xrayMaterials = (colors: DroneColors) =>
+const xrayMaterials = () =>
   withAll({
-    frame: translucent(XRAY_SHELL, 0.06),
-    ducts: translucent(XRAY_SHELL, 0.05),
-    motor: translucent("#8fa3b8", 0.18),
-    motorBell: translucent("#8fa3b8", 0.22),
-    accent: glowing(colors.accent, 1.2),
-    blade: translucent("#cbd5e1", 0.25),
-    disc: new MeshBasicMaterial({
-      color: "#67e8f9",
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      side: DoubleSide,
-    }),
-    pcb: glowing("#22d3ee", 0.55),
-    chip: glowing("#67e8f9", 1.2),
-    imu: glowing("#f472b6", 2.4),
-    baro: glowing("#a3e635", 2.2),
-    battery: translucent("#f5a524", 0.16),
-    batteryLabel: glowing("#f5a524", 0.9),
-    camera: translucent("#94a3b8", 0.2),
-    lens: translucent("#94a3b8", 0.3),
-    receiver: translucent("#94a3b8", 0.25),
-    antenna: glowing(colors.accent, 0.8),
-    noseLight: glowing("#22d3ee", 2.2),
-    tailLight: glowing("#f05252", 1.8),
-    edges: new LineBasicMaterial({ color: XRAY_SHELL, transparent: true, opacity: 0.55 }),
+    frame: glass(PALETTE.blueGlass, 0.14),
+    ducts: glass(PALETTE.blueMist, 0.1),
+    motor: glass(PALETTE.blue, 0.3),
+    motorBell: glass("#3d9bff", 0.25),
+    accent: flat(PALETTE.blue, 1),
+    blade: flat(PALETTE.blue, 0.25),
+    disc: disc(PALETTE.blueGlass),
+    pcb: glass("#bfe3ff", 0.55),
+    chip: flat(PALETTE.blue, 0.9),
+    imu: flat(PALETTE.blue, 1),
+    baro: flat(PALETTE.ink, 0.85),
+    battery: glass(PALETTE.amberGlass, 0.3),
+    batteryLabel: flat(PALETTE.amber, 0.7),
+    camera: glass("#8ccbff", 0.15),
+    lens: glass(PALETTE.blue, 0.3),
+    receiver: glass("#8ccbff", 0.15),
+    antenna: flat(PALETTE.blue, 0.5),
+    noseLight: flat(PALETTE.blue, 1),
+    tailLight: flat(PALETTE.fail, 1),
+    edges: edgeLines(PALETTE.blue, 0.55),
   });
 
-const ghostMaterials = (tint: string, strength: number) => {
-  const shell = translucent(tint, 0.16 * strength);
-  const core = translucent(tint, 0.3 * strength);
+const faintMaterials = (fill: string, edge: string, strength: number) => {
+  const shell = glass(fill, 0.1 * strength);
+  const core = glass(fill, 0.22 * strength);
 
   return withAll({
     frame: shell,
-    ducts: translucent(tint, 0.1),
+    ducts: glass(fill, 0.07 * strength),
     motor: core,
     motorBell: core,
-    accent: glowing(tint, 1.4),
-    blade: translucent(tint, 0.22),
-    disc: new MeshBasicMaterial({
-      color: tint,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      side: DoubleSide,
-    }),
+    accent: flat(edge, 0.4 * strength),
+    blade: flat(edge, 0.18 * strength),
+    disc: disc(fill),
     pcb: core,
     chip: core,
     imu: core,
     baro: core,
-    battery: translucent(tint, 0.24),
-    batteryLabel: glowing(tint, 0.8),
+    battery: glass(fill, 0.14 * strength),
+    batteryLabel: core,
     camera: core,
     lens: core,
     receiver: core,
-    antenna: glowing(tint, 0.8),
-    noseLight: glowing(tint, 2),
-    tailLight: glowing(tint, 1.2),
-    edges: new LineBasicMaterial({ color: tint, transparent: true, opacity: 0.6 }),
+    antenna: flat(edge, 0.3 * strength),
+    noseLight: flat(edge, 0.5 * strength),
+    tailLight: flat(edge, 0.5 * strength),
+    edges: edgeLines(edge, 0.3 * strength),
   });
 };
 
-export const droneMaterials = (tone: DroneTone, colors: DroneColors): DroneMaterials => {
-  if (tone === "xray") return xrayMaterials(colors);
+export const droneMaterials = (tone: DroneTone): DroneMaterials => {
+  if (tone === "xray") return xrayMaterials();
 
-  if (tone === "ghost") return ghostMaterials("#a78bfa", 1);
+  if (tone === "ghost") return faintMaterials("#c9b8f5", PALETTE.ghost, 1.6);
 
-  if (tone === "target") return ghostMaterials("#e2e8f0", 0.55);
+  if (tone === "target") return faintMaterials("#d0d0d0", PALETTE.ink, 0.9);
 
-  return studioMaterials(colors);
+  return studioMaterials();
 };
