@@ -20,6 +20,20 @@ struct ValidateReport {
     diagnostics: Vec<Diagnostic>,
 }
 
+pub fn validate_report(root: &Path) -> serde_json::Value {
+    let (repo, diags) = drone_schema::validate(&root.join("hardware"));
+    let errors = diags.error_count();
+    serde_json::json!({
+        "ok": errors == 0,
+        "files_checked": repo.files_checked,
+        "errors": errors,
+        "warnings": diags.warning_count(),
+        "airframes": repo.airframes.keys().collect::<Vec<_>>(),
+        "scenarios": repo.scenarios.keys().collect::<Vec<_>>(),
+        "diagnostics": diags.sorted(),
+    })
+}
+
 pub fn validate(root: &Path, json: bool) -> anyhow::Result<ExitCode> {
     let (repo, diags) = drone_schema::validate(&root.join("hardware"));
     let errors = diags.error_count();

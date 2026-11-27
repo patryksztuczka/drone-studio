@@ -2,6 +2,7 @@
 
 pub mod assertions;
 pub mod lab;
+pub mod record;
 pub mod session;
 
 use std::time::Instant;
@@ -86,6 +87,16 @@ pub fn run(
         wall_time_s: wall,
         bytes_on_wire: 0,
     })
+}
+
+pub type ThreadPool = rayon::ThreadPool;
+
+pub fn thread_pool(jobs: Option<usize>) -> Result<ThreadPool, rayon::ThreadPoolBuildError> {
+    let mut b = rayon::ThreadPoolBuilder::new();
+    if let Some(j) = jobs {
+        b = b.num_threads(j.max(1));
+    }
+    b.build()
 }
 
 pub fn run_suite(
