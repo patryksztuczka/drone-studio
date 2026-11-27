@@ -1,33 +1,20 @@
 # Drone Studio
 
-Drone Studio is the window you fly, replay and inspect `palm_x4_2in` in. It shows the simulated drone as a glass model on a drafting grid, the board it runs on, every recorded flight, yours and the ones agents run, and the firmware booting in Renode.
+Drone Studio is the window you fly, replay and inspect `palm_x4_2in` in. It shows the simulated drone as a blue glass model, its sensors and motors as charts, the board it runs on, and every recorded flight, yours and the ones agents run.
 
 ## Start
 
-Run `pnpm dev:desktop`. The window starts the drone engine on its own; the top right reads `engine online` once it is connected.
-
-## Find your way around
-
-Studio shows one module at a time. The name after the logo, Workbench at first, opens the module menu:
-
-| Module    | Shortcut | What it is for                           |
-| --------- | -------- | ---------------------------------------- |
-| Workbench | `⌘1`     | fly, watch and scrub a flight            |
-| Hardware  | `⌘2`     | the board, its sensors and parts to swap |
-| Runs      | `⌘3`     | every recorded flight, and comparing two |
-| Emulation | `⌘4`     | the real firmware booting in Renode      |
-
-The plain digits `1` to `4` work too. A red dot next to Runs in the menu means the newest run failed. The pill at the top right says which target you are looking at, SIM, EMU or REAL, and the round button next to it plays and pauses.
+Run `pnpm dev:desktop`. The window starts the drone engine on its own; the top right reads ENGINE ONLINE once it is connected. While it is not, the viewport says "Waiting for drone-engine" and shows the address it keeps retrying.
 
 ## Fly a scenario
 
-In Workbench, the second part of the path names the scenario. Pick another there, then press the round play button or Space. The FLIGHT card shows the arm state, attitude, height and virtual time, and MOTORS shows each motor's thrust, blue for the ones pushing harder than the rest and red when one saturates. When the scenario ends, Studio records it and it appears at the top of Runs.
+Pick a scenario in the path at the top left and press Play (or Space). The flight runs live: Space pauses it, `R` restarts it, and the speed menu next to the target pill runs it from 0.1× to 4×. Pick another scenario while paused and Play flies the new one. When the scenario ends, Studio records it and it appears at the top of Runs.
 
-Space pauses, `R` restarts, and the speed under the big clock runs the flight from 0.1× to 4×.
+If the engine refuses a command or is not there, a red note under the drone says which call failed and why.
 
 ## Fly it yourself
 
-Press MANUAL FLIGHT under the drone, or pick Manual flight in the scenario menu. Plug in a gamepad, an Xbox or PlayStation pad or an RC transmitter in USB joystick mode, or use the keyboard:
+Press Manual flight under the drone, or pick Manual flight in the scenario menu. Plug in a gamepad, an Xbox or PlayStation pad or an RC transmitter in USB joystick mode, or use the keyboard:
 
 | Control           | Gamepad      | Keyboard   |
 | ----------------- | ------------ | ---------- |
@@ -41,32 +28,32 @@ The drone starts in altitude hold: centre throttle holds height. It arms only wi
 
 ## Look inside
 
-Press `X` or the X-RAY pill for X-Ray: the glass gets thinner, the battery turns amber, a black marker shows the centre of mass, the grey ghost is the attitude the flight controller is asking for, a blue line traces the last seconds of flight, and tags point at the flight controller, the IMU, the barometer, the battery and each motor. The thin blue arrows on the rotors show thrust in every view. `C` switches the camera between following the drone and orbiting a fixed point; drag to orbit and scroll to zoom.
+The card at the top left of the viewport reads height, climb, ground speed, attitude, the pack and the charge, with pills for the arm state, the flight mode, saturation and wind. The thin arrows on the rotors show each motor's thrust: blue below 55 % command, amber up to 80 %, red above.
+
+Press `X` or X-Ray for X-Ray: the glass thins, the battery turns amber, a marker shows the centre of mass, the grey ghost is the attitude the flight controller is asking for, and callouts name the flight controller, the IMU, the barometer, the battery and each motor, with its command once it passes 55 %. `C` switches the camera between following the drone and orbiting a fixed point; drag to orbit and scroll to zoom. The dotted line is where the drone has just been.
 
 ## Go back in time
 
-The Flight Time Machine at the bottom holds the whole flight: the big clock, a line of the height and pills for arming, gusts, saturation, failsafes and touchdowns. Drag anywhere on it and everything follows: the drone, the cards and the charts. Click a pill to jump there. During a live flight, `go live` (or `L`) takes you back to the present. The arrow keys step a tenth of a second, a whole second with Shift.
-
-Press `charts` under the clock, or `T`, for attitude against the setpoint, motor commands, the battery, the IMU vibration spectrum and the firmware log. Click a log line to jump to it.
+The Flight Time Machine at the bottom holds the whole flight. Drag it to any moment and everything follows: the drone, the charts and the firmware log at the bottom right. Markers show arming, gusts, motor saturation, failed assertions and touchdowns, shaded while they last; click a label to jump there. An amber bar along the bottom marks an anomaly. During a live flight, LIVE (or `L`) takes you back to the present. The arrow keys step a tenth of a second, a whole second with Shift.
 
 ## Replay and compare runs
 
-Runs lists every recorded flight, newest first, with a green or red dot for PASS or FAIL. Click one to replay it; the open run turns black and shows the parameters it flew with. Hover another and press compare to fly it as a faint baseline next to the open one. The GHOST DIFF card puts the two side by side, red where the open run did worse, and lists the assertions it failed. The CANDIDATE and BASELINE tags show each drone's height, with an arrow when one is out of view.
+Runs · AI feed lists every recorded flight, newest first, with PASS or FAIL, where it came from (studio, cli, suite or an agent over MCP) and its key numbers. A red dot on the tab means an agent recorded a run you have not seen yet. Click a run to replay it. Press Compare on another to fly it as a violet ghost next to the open one; the flight card shows how far apart they are, and the Time Machine draws both heights.
 
-When an agent calls `studio_focus`, Studio switches to Runs, opens that run at the second it names and says so at the bottom.
+When an agent calls `studio_focus`, Studio opens that run in Runs at the second it names.
 
 ## Inspect the hardware
 
-Hardware shows the flight controller board, drawn from the same manifest the firmware and the simulator are generated from. Click the MCU, the IMU or the barometer to read its bus, pins and identity register; while a flight is open, the card's line shows its last three seconds of samples. Hover a pad to see its net and what it drives. Hover or click a bus pill to light the pads it uses.
+Hardware shows the flight controller board. Hover a pad to see its net and what it drives, or a bus to light the parts on it and list its pins. The sensor rows show whether the IMU and barometer are streaming at the moment on the timeline.
 
-The AIRFRAME card recalculates mass, thrust to weight and hover time for another battery, motor or prop. It is a preview: the drone keeps flying the parts in `hardware/` until someone changes them there.
+Component swap recalculates mass, thrust to weight and hover time for another battery, motor, prop or frame. It is a preview: the drone keeps flying the parts in `hardware/` until someone changes them there.
 
-## Emulation and REAL
+## EMU and REAL
 
-Emulation shows the last smoke test: the firmware's UART output, whether Docker, the `.elf` and the Renode platform are ready, and how far the boot got. Run smoke builds the firmware and boots it in Renode, which takes about twenty seconds once the Docker image exists.
+EMU opens a card over the viewport with Docker, the firmware build, the Renode platform and the last smoke test. Run smoke test builds the firmware and boots it in Renode, which takes about twenty seconds once the Docker image exists; the SIM flight keeps running meanwhile. Check again reads the status anew.
 
 REAL is read-only: Studio reads a real board and never commands it until the Safety Gate arrives in M2.
 
 ## Showcase
 
-Press `F`, or pick Showcase mode in the module menu, to leave only the glass drone and the grid while the camera circles. The sticks stay. `Esc` brings the rest back.
+Press `F` or Showcase to hide the panels and leave the glass drone, the flight card and the name while the camera circles. The sticks stay. `Esc` brings the panels back.

@@ -1,5 +1,3 @@
-import type { StudioModule } from "../../shared/studio.atoms.ts";
-
 export type HotkeyAction =
   | "toggle-play"
   | "reset"
@@ -10,20 +8,13 @@ export type HotkeyAction =
   | "live"
   | "seek-back"
   | "seek-forward"
-  | "telemetry"
-  | `module-${StudioModule}`;
+  | "tab-hardware"
+  | "tab-telemetry"
+  | "tab-runs";
 
 export interface HotkeyContext {
   readonly manualFlight: boolean;
-  readonly command: boolean;
 }
-
-const MODULE_KEYS: ReadonlyMap<string, HotkeyAction> = new Map([
-  ["1", "module-workbench"],
-  ["2", "module-hardware"],
-  ["3", "module-runs"],
-  ["4", "module-emulation"],
-]);
 
 const ALWAYS: ReadonlyMap<string, HotkeyAction> = new Map([
   [" ", "toggle-play"],
@@ -33,8 +24,9 @@ const ALWAYS: ReadonlyMap<string, HotkeyAction> = new Map([
   ["Escape", "leave-showcase"],
   ["c", "camera"],
   ["l", "live"],
-  ["t", "telemetry"],
-  ...MODULE_KEYS,
+  ["1", "tab-hardware"],
+  ["2", "tab-telemetry"],
+  ["3", "tab-runs"],
 ]);
 
 const SEEKS: ReadonlyMap<string, HotkeyAction> = new Map([
@@ -44,8 +36,6 @@ const SEEKS: ReadonlyMap<string, HotkeyAction> = new Map([
 
 export const hotkeyAction = (key: string, context: HotkeyContext): HotkeyAction | undefined => {
   const normalised = key.length === 1 ? key.toLowerCase() : key;
-
-  if (context.command) return MODULE_KEYS.get(normalised);
 
   return ALWAYS.get(normalised) ?? (context.manualFlight ? undefined : SEEKS.get(normalised));
 };

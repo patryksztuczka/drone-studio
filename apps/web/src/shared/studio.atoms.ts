@@ -50,23 +50,11 @@ export const cameraMode = Atom.make<CameraMode>("follow").pipe(Atom.keepAlive);
 
 export const showcase = Atom.make(false).pipe(Atom.keepAlive);
 
-export const STUDIO_MODULES = ["workbench", "hardware", "runs", "emulation"] as const;
+export type InspectorTab = "hardware" | "telemetry" | "runs";
 
-export type StudioModule = (typeof STUDIO_MODULES)[number];
+export const inspectorTab = Atom.make<InspectorTab>("telemetry").pipe(Atom.keepAlive);
 
-export const studioModule = Atom.make<StudioModule>("workbench").pipe(Atom.keepAlive);
-
-export const telemetryOpen = Atom.make(false).pipe(Atom.keepAlive);
-
-export interface FocusNotice {
-  readonly runId: RunId;
-  readonly t: number;
-  readonly sequence: number;
-}
-
-export const focusNotice = Atom.make<Option.Option<FocusNotice>>(Option.none()).pipe(
-  Atom.keepAlive,
-);
+export const runsSeenAt = Atom.make("").pipe(Atom.keepAlive);
 
 export type StudioMode = "SIM" | "EMU" | "REAL";
 
@@ -94,10 +82,10 @@ export interface FlightView {
   readonly status: SessionStatus | undefined;
 }
 
-const liveView = (recording: LiveRecording): FlightView => ({
+const liveView = (recording: LiveRecording, name: (id: string) => string): FlightView => ({
   key: `live:${String(recording.sessionId)}`,
   live: true,
-  label: recording.status?.scenario ?? "live session",
+  label: recording.status === undefined ? "live session" : name(recording.status.scenario),
   result: recording.stopped?.result ?? undefined,
   table: recording.table,
   events: recording.events,
@@ -123,7 +111,18 @@ const loadedView = (result: AsyncResult.AsyncResult<LoadedRun, unknown>) =>
 
 export const activeFlight = Atom.make((get): Option.Option<FlightView> =>
   PlaybackSource.match(get(playbackSource), {
-    Live: () => Option.map(get(liveRecording), liveView),
+    Live: () =>
+      Option.map(get(liveRecording), (recording) =>
+        liveView(recording, (id) => {
+          const info = get(engineInfo);
+
+          const known = AsyncResult.isSuccess(info)
+            ? info.value.scenarios.find((scenario) => scenario.id === id)
+            : undefined;
+
+          return known?.name ?? (id === "manual_flight" ? "Manual flight" : id);
+        }),
+      ),
     Run: (source) => loadedView(get(loadedRun(source.runId))),
   }),
 ).pipe(Atom.keepAlive);

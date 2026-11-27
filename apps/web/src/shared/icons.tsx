@@ -28,50 +28,42 @@ export const PauseIcon = (props: IconProps) => (
   </svg>
 );
 
-const Glyph = ({ children, ...props }: IconProps) => (
-  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true" {...props}>
-    {children}
+export const ResetIcon = (props: IconProps) => (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3M2.5 2v2.5H5"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
-export const WorkbenchIcon = (props: IconProps) => (
-  <Glyph stroke="currentColor" {...props}>
-    <circle cx="4" cy="4" r="2.6" />
-    <circle cx="14" cy="4" r="2.6" />
-    <circle cx="4" cy="14" r="2.6" />
-    <circle cx="14" cy="14" r="2.6" />
-    <path d="M6 6L12 12M12 6L6 12" />
-  </Glyph>
-);
-
-export const HardwareIcon = (props: IconProps) => (
-  <Glyph stroke="currentColor" {...props}>
-    <rect x="3" y="3" width="12" height="12" />
-    <rect x="6.5" y="6.5" width="5" height="5" />
-  </Glyph>
-);
-
-export const RunsIcon = (props: IconProps) => (
-  <Glyph stroke="currentColor" {...props}>
-    <path d="M2 4H16M2 9H16M2 14H16" />
-  </Glyph>
-);
-
-export const EmulationIcon = (props: IconProps) => (
-  <Glyph stroke="currentColor" {...props}>
-    <rect x="2" y="4" width="14" height="10" rx="1" />
-    <path d="M5 8L7 10L5 12M9 12H12" />
-  </Glyph>
-);
-
 export const ShowcaseIcon = (props: IconProps) => (
-  <Glyph stroke="currentColor" {...props}>
-    <path d="M2 6V2H6M12 2H16V6M16 12V16H12M6 16H2V12" />
-  </Glyph>
+  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M1.5 5V1.5H5M9 1.5h3.5V5M12.5 9v3.5H9M5 12.5H1.5V9"
+      stroke="currentColor"
+      strokeWidth="1.2"
+    />
+  </svg>
 );
 
-export const AgentIcon = (props: IconProps) => (
-  <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true" {...props}>
-    <path d="M7 1.5L8.3 5.7L12.5 7L8.3 8.3L7 12.5L5.7 8.3L1.5 7L5.7 5.7Z" fill="currentColor" />
+export const GamepadIcon = (props: IconProps) => (
+  <svg width="14" height="10" viewBox="0 0 20 14" fill="none" aria-hidden="true" {...props}>
+    <rect x="1" y="1" width="18" height="12" rx="6" stroke="currentColor" strokeWidth="1.3" />
+    <path d="M5 7H9M7 5V9" stroke="currentColor" strokeWidth="1.3" />
+    <circle cx="14" cy="6" r="1" fill="currentColor" />
+  </svg>
+);
+
+export const GhostIcon = (props: IconProps) => (
+  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M3 12.5V6a4 4 0 0 1 8 0v6.5l-1.3-1-1.4 1-1.3-1-1.3 1-1.4-1z"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
   </svg>
 );

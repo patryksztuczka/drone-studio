@@ -16,4 +16,8 @@ export const PALETTE = {
   amber: "#e58a00",
   amberGlass: "#fbc98a",
   amberSoft: "#fff4e0",
+  ghost: "#7c5cff",
+  gust: "#1c7fc4",
+  magenta: "#d6409f",
+  olive: "#5e9e00",
 } as const;

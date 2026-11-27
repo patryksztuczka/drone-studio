@@ -9,6 +9,7 @@ import { Option } from "effect";
 import { Atom } from "effect/reactivity";
 import { useContext } from "react";
 
+import { flyingChoice } from "./session-choice.ts";
 import {
   activeFlight,
   cursor,
@@ -76,7 +77,12 @@ export const useTransport = (): Transport => {
   const toggleLive = () => {
     const status = registry.get(liveSession);
 
-    if (Option.isNone(status) || status.value.finished) {
+    if (
+      Option.isNone(status) ||
+      status.value.finished ||
+      (status.value.paused &&
+        !flyingChoice(status.value, registry.get(selectedScenario), MANUAL_SCENARIO))
+    ) {
       begin("scenario");
 
       return;
@@ -127,7 +133,10 @@ export const useTransport = (): Transport => {
 
       registry.set(replayRate, speed);
     },
-    startManual: () => begin("manual"),
+    startManual: () => {
+      registry.set(selectedScenario, MANUAL_SCENARIO);
+      begin("manual");
+    },
     startScenario: () => begin("scenario"),
     goLive: () => {
       registry.set(playbackSource, PlaybackSource.cases.Live.make({}));

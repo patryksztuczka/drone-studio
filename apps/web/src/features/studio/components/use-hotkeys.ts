@@ -5,11 +5,10 @@ import { useContext, useEffect, useRef } from "react";
 import {
   activeFlight,
   cameraMode,
+  inspectorTab,
   manualFlightActive,
   playhead,
   showcase,
-  studioModule,
-  telemetryOpen,
   viewMode,
 } from "../../../shared/studio.atoms.ts";
 import type { Transport } from "../../../shared/transport.ts";
@@ -51,23 +50,18 @@ export const useHotkeys = (transport: Transport) => {
         live: () => latest.current.goLive(),
         "seek-back": () => seek(-1, coarse),
         "seek-forward": () => seek(1, coarse),
-        telemetry: () => registry.set(telemetryOpen, !registry.get(telemetryOpen)),
-        "module-workbench": () => registry.set(studioModule, "workbench"),
-        "module-hardware": () => registry.set(studioModule, "hardware"),
-        "module-runs": () => registry.set(studioModule, "runs"),
-        "module-emulation": () => registry.set(studioModule, "emulation"),
+        "tab-hardware": () => registry.set(inspectorTab, "hardware"),
+        "tab-telemetry": () => registry.set(inspectorTab, "telemetry"),
+        "tab-runs": () => registry.set(inspectorTab, "runs"),
       };
 
       actions[action]();
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.altKey || isTyping(event.target) || event.defaultPrevented) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || isTyping(event.target)) return;
 
-      const action = hotkeyAction(event.key, {
-        manualFlight: registry.get(manualFlightActive),
-        command: event.metaKey || event.ctrlKey,
-      });
+      const action = hotkeyAction(event.key, { manualFlight: registry.get(manualFlightActive) });
 
       if (
         action === undefined ||
