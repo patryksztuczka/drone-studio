@@ -27,6 +27,8 @@ import {
   SessionEvents,
   SessionStatus,
   SessionStopped,
+  SmokeReport,
+  SmokeStarted,
   Spectrum,
   Sticks,
 } from "./protocol.ts";
@@ -166,9 +168,32 @@ export const hardwarePreview = engineRuntime
   )
   .pipe(Atom.keepAlive);
 
-export const emuStatus = engineRuntime.atom((get) =>
-  Effect.flatMap(connected(get), (connection) => connection.call("emu.status", {}, EmuStatus)),
-);
+export const emuRevision = Atom.make(0).pipe(Atom.keepAlive);
+
+export const emuStatus = engineRuntime.atom((get) => {
+  get(emuRevision);
+
+  return Effect.flatMap(connected(get), (connection) =>
+    connection.call("emu.status", {}, EmuStatus),
+  );
+});
+
+export const SmokeRun = Schema.TaggedUnion({
+  Running: {},
+  Finished: { report: SmokeReport },
+});
+
+export type SmokeRun = typeof SmokeRun.Type;
+
+export const smokeRun = Atom.make<Option.Option<SmokeRun>>(Option.none()).pipe(Atom.keepAlive);
+
+export const runSmoke = engineRuntime
+  .fn(() =>
+    Effect.flatMap(EngineConnection, (connection) =>
+      connection.call("emu.smoke", {}, SmokeStarted),
+    ),
+  )
+  .pipe(Atom.keepAlive);
 
 export const realStatus = engineRuntime.atom((get) =>
   Effect.flatMap(connected(get), (connection) => connection.call("real.status", {}, RealStatus)),
@@ -197,6 +222,8 @@ const decodeSessionStopped = Schema.decodeUnknownOption(SessionStopped);
 const decodeLiveSpectrum = Schema.decodeUnknownOption(LiveSpectrum);
 
 const decodeFocus = Schema.decodeUnknownOption(FocusRequest);
+
+const decodeSmokeReport = Schema.decodeUnknownOption(SmokeReport);
 
 const SessionOfStopped = Schema.Struct({ session_id: Schema.Number });
 
@@ -251,6 +278,16 @@ const applyNotification = (
     );
   } else if (method === "runs.changed") {
     get.set(runsRevision, get.once(runsRevision) + 1);
+  } else if (method === "emu.smoke.started") {
+    get.set(smokeRun, Option.some(SmokeRun.cases.Running.make({})));
+  } else if (method === "emu.smoke.finished") {
+    const report = Option.getOrElse(decodeSmokeReport(params), () => ({
+      ok: false,
+      error: "drone-engine sent a smoke report Studio cannot read",
+    }));
+
+    get.set(smokeRun, Option.some(SmokeRun.cases.Finished.make({ report })));
+    get.set(emuRevision, get.once(emuRevision) + 1);
   } else if (method === "studio.focus") {
     Option.map(decodeFocus(params), (focus) => {
       const previous = Option.match(get.once(focusTarget), {

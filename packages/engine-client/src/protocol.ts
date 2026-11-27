@@ -246,6 +246,12 @@ export const Performance = Schema.Struct({
 
 export type Performance = typeof Performance.Type;
 
+const AnalogInput = Schema.Struct({
+  adc: Schema.String,
+  channel: Schema.Number,
+  pin: Schema.String,
+});
+
 export const BoardLayout = Schema.Struct({
   airframe: Schema.Struct({
     id: AirframeId,
@@ -280,8 +286,10 @@ export const BoardLayout = Schema.Struct({
     pads: Schema.Array(Pad),
     motor_outputs: Schema.Array(MotorOutput),
     mounting_holes_mm: Schema.Array(Vector2),
+    analog: Schema.optional(Schema.Struct({ current: AnalogInput, vbat: AnalogInput })),
   }),
   performance: Performance,
+  source_hash: Schema.optional(Schema.String),
 });
 
 export type BoardLayout = typeof BoardLayout.Type;
@@ -338,11 +346,34 @@ export const HardwarePreview = Schema.Struct({
 
 export type HardwarePreview = typeof HardwarePreview.Type;
 
+export const SmokeTest = Schema.Struct({
+  name: Schema.String,
+  passed: Schema.Boolean,
+  message: Schema.String,
+});
+
+export type SmokeTest = typeof SmokeTest.Type;
+
+export const SmokeReport = Schema.Struct({
+  ok: Schema.Boolean,
+  error: Schema.optional(Schema.String),
+  elf: Schema.optional(Schema.String),
+  elf_bytes: Schema.optional(Schema.Number),
+  image: Schema.optional(Schema.String),
+  tests: Schema.optional(Schema.Array(SmokeTest)),
+  uart_log_tail: Schema.optional(Schema.Array(Schema.String)),
+  duration_s: Schema.optional(Schema.Number),
+});
+
+export type SmokeReport = typeof SmokeReport.Type;
+
+export const SmokeStarted = Schema.Struct({ started: Schema.Boolean });
+
 export const EmuStatus = Schema.Struct({
   docker: Schema.NullOr(Schema.String),
   elf_built: Schema.Boolean,
   repl: Schema.Boolean,
-  last_smoke: Schema.NullOr(Schema.Unknown),
+  last_smoke: Schema.NullOr(SmokeReport),
   hint: Schema.String,
 });
 
