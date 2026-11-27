@@ -8,7 +8,6 @@ coverage/
 .alchemy/
 .wrangler/
 .vite-hooks/_/
-apps/web/src/paraglide/
 .scratch/
 .DS_Store
 .dev/

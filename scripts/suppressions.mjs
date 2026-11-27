@@ -7,7 +7,7 @@ const BASELINE_FILE = "suppressions.baseline.json";
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
 
-const SKIPPED_PREFIXES = ["tools/oxlint/anti-slop/", "apps/web/src/paraglide/"];
+const SKIPPED_PREFIXES = ["tools/oxlint/anti-slop/"];
 
 const DIRECTIVE =
   /(?:^|\s)(?:\/\/|\/\*+|\*)\s*(?<kind>(?:es|ox)lint-disable(?:-next-line|-line)?|@ts-expect-error|@ts-ignore|@ts-nocheck|@effect-diagnostics(?:-next-line)?)(?=\s|\*\/|$)(?<rest>.*)$/u;

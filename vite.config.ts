@@ -8,12 +8,7 @@ export default defineConfig({
     printWidth: 100,
     sortPackageJson: true,
     sortImports: {},
-    ignorePatterns: [
-      "tools/oxlint/anti-slop/**",
-      "apps/web/src/paraglide/**",
-      ".scratch/**",
-      "pnpm-lock.yaml",
-    ],
+    ignorePatterns: ["tools/oxlint/anti-slop/**", ".scratch/**", "pnpm-lock.yaml"],
   },
   staged: {
     "*": "vp check --fix",

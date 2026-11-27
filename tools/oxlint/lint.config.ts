@@ -164,7 +164,7 @@ const lint = {
           {
             featuresRoot: "apps/web/src/features",
             layers: ["apps/web/src/shared", "apps/web/src/features", "apps/web/src/app"],
-            roots: ["apps/web/src/runtime.ts"],
+            roots: [],
           },
         ],
       },
@@ -210,7 +210,6 @@ const lint = {
     "**/node_modules/**",
     "**/coverage/**",
     "tools/oxlint/anti-slop/**",
-    "apps/web/src/paraglide/**",
     ".agents/**",
     ".claude/**",
     ".scratch/**",
