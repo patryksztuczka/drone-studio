@@ -9,6 +9,8 @@
 
 The Rust job runs next to them: it installs the toolchain from `rust-toolchain.toml`, then runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `cargo test` over the workspace.
 
+The Firmware job runs beside it on `firmware/target-stm32h7`, which is its own Cargo workspace: `cargo fmt --check`, clippy with warnings as errors and the release build for `thumbv7em-none-eabihf`. When it passes, the Renode smoke job builds the emulation image and boots that ELF in Renode ([emulation](emulation.md)).
+
 The `CI OK` job fails when any job failed or was cancelled and passes when they passed or were skipped, so a branch rule can require it instead of each job.
 
 `.github/workflows/pr-title.yml` checks that the pull request title is a Conventional Commit subject. On a branch, a newer run cancels the older one. On `master`, every run finishes.

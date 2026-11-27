@@ -12,7 +12,7 @@
     "typecheck": "effect-tsgo tsc -b",
     "test": "vp run -r test",
     "build": "vp run -r build",
-    "verify": "vp check && pnpm env:check && pnpm check:deps && pnpm check:suppressions && pnpm check:doc-pins && pnpm check:knip && pnpm typecheck && pnpm test && pnpm check:rust && pnpm check:no-std && pnpm check:hardware && pnpm build",
+    "verify": "vp check && pnpm env:check && pnpm check:deps && pnpm check:suppressions && pnpm check:doc-pins && pnpm check:knip && pnpm typecheck && pnpm test && pnpm check:rust && pnpm check:no-std && pnpm check:firmware && pnpm check:hardware && pnpm build",
     "env:check": "varlock load",
     "dev:stop": "node scripts/dev.mjs stop",
     "check:changed": "node scripts/check-changed.mjs",
@@ -25,7 +25,8 @@
     "pr-evidence": "node .agents/skills/file-pr/scripts/pr-evidence.mjs",
     "check:hardware": "cargo run -q -p drone-cli -- validate && cargo run -q -p drone-cli -- codegen --check",
     "check:no-std": "cargo build -q -p flight-config -p flight-core -p drone-protocol --no-default-features --target thumbv7em-none-eabihf",
-    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace"
+    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
+    "check:firmware": "cd firmware/target-stm32h7 && cargo fmt --check && cargo clippy --release -- -D warnings && cargo build --release"
   },
   "devDependencies": {
     "@effect/tsgo": "catalog:",

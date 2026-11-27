@@ -35,7 +35,23 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["platform"],
-      "properties": { "platform": { "type": "string", "pattern": "\\.repl$" } }
+      "properties": {
+        "platform": { "type": "string", "pattern": "\\.repl$" },
+        "peripherals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "model", "address", "rcc"],
+            "properties": {
+              "name": { "$ref": "common.schema.json#/$defs/id" },
+              "model": { "type": "string", "pattern": "^[A-Za-z0-9_]+\\.[A-Za-z0-9_]+$" },
+              "address": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+              "rcc": { "type": "string", "pattern": "^[A-Z0-9_]+$" }
+            }
+          }
+        }
+      }
     },
     "peripherals": {
       "type": "object",

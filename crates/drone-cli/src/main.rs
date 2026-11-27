@@ -1,4 +1,4 @@
-use drone_cli::{analyze, hardware, output, root, sim, studio};
+use drone_cli::{analyze, emu, hardware, output, root, sim, studio};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -51,6 +51,8 @@ enum Command {
         #[arg(long, default_value_t = 20)]
         limit: usize,
     },
+    #[command(subcommand, about = "Boot the STM32H7 firmware in Renode")]
+    Emu(EmuCommand),
     #[command(subcommand, about = "Talk to a running Drone Studio")]
     Studio(StudioCommand),
 }
@@ -104,6 +106,12 @@ struct AnalyzeArgs {
     signals: Vec<String>,
     #[arg(long, default_value_t = 200)]
     max_rows: usize,
+}
+
+#[derive(Subcommand, Debug)]
+enum EmuCommand {
+    #[command(about = "Build the firmware ELF and run the Renode boot-and-loop suite in Docker")]
+    Smoke,
 }
 
 #[derive(Subcommand, Debug)]
@@ -168,6 +176,7 @@ fn main() -> ExitCode {
             analyze::print(json, &v);
             Ok(ExitCode::SUCCESS)
         }
+        Command::Emu(EmuCommand::Smoke) => emu::smoke(&root, json),
         Command::Studio(StudioCommand::Focus { run, t }) => studio::focus(&root, json, &run, t),
     };
     match result {

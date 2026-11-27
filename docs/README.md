@@ -18,6 +18,7 @@ The [README](../README.md) has the quickstart. The runbooks:
 
 - [Local development](operations/development.md): the toolchains, the web dev server, ports, environment variables, the desktop app
 - [CI](operations/ci.md): the stages and what each one checks
+- [Emulation](operations/emulation.md): the STM32H743 firmware, the Renode container, the IMU model and `drone emu smoke`
 - [Pull request evidence](operations/pr-evidence.md): upload screenshots and recordings to R2 and paste them into a pull request
 
 ## I work on this repository
