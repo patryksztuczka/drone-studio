@@ -152,7 +152,7 @@ const lint = {
       rules: testHygieneRules,
     },
     {
-      files: ["apps/web/**", "apps/mobile/**", "packages/ui/**"],
+      files: ["apps/web/**", "packages/ui/**"],
       plugins: ["react"],
       env: { browser: true },
     },
@@ -167,20 +167,6 @@ const lint = {
             roots: ["apps/web/src/runtime.ts"],
           },
         ],
-      },
-    },
-    {
-      files: ["apps/mobile/src/**"],
-      rules: {
-        "@drone-studio/frontend/feature-boundaries": [
-          "error",
-          {
-            featuresRoot: "apps/mobile/src/features",
-            layers: ["apps/mobile/src/shared", "apps/mobile/src/features", "apps/mobile/src/app"],
-            roots: ["apps/mobile/src/runtime.ts"],
-          },
-        ],
-        "@drone-studio/frontend/accessible-controls": "error",
       },
     },
     {
@@ -225,8 +211,6 @@ const lint = {
     "**/coverage/**",
     "tools/oxlint/anti-slop/**",
     "apps/web/src/paraglide/**",
-    "apps/mobile/src/paraglide/**",
-    "apps/mobile/uniwind-types.d.ts",
     ".agents/**",
     ".claude/**",
     ".scratch/**",

@@ -1,5 +1,4 @@
 import { BetterAuth } from "@alchemy.run/better-auth";
-import { expo } from "@better-auth/expo";
 import { mcp } from "@better-auth/mcp";
 import { confirmEmail, Mailer, resetPassword } from "@drone-studio/core/mail";
 import type { MailerApi } from "@drone-studio/core/mail";
@@ -116,7 +115,7 @@ const makeAuth = Effect.fnUntraced(function* (secretOption: AuthSecretOption) {
     baseURL: Option.getOrUndefined(baseURL),
     trustedOrigins: trustedOriginsFrom(trustedOrigins),
     disabledPaths: ["/token"],
-    plugins: [expo(), ...Option.match(mcpResource, { onNone: () => [], onSome: mcpPlugins })],
+    plugins: [...Option.match(mcpResource, { onNone: () => [], onSome: mcpPlugins })],
     user: { modelName: "users" },
     session: { modelName: "sessions" },
     account: { modelName: "accounts" },

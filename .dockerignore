@@ -11,8 +11,4 @@
 .dev
 .repos
 .scratch
-apps/mobile/ios
-apps/mobile/android
-apps/mobile/.expo
 apps/web/src/paraglide
-apps/mobile/src/paraglide
