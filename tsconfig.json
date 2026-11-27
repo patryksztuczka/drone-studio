@@ -2,40 +2,10 @@
   "files": [],
   "references": [
     {
-      "path": "packages/capability"
-    },
-    {
-      "path": "packages/auth"
-    },
-    {
-      "path": "packages/client-runtime"
-    },
-    {
-      "path": "packages/core"
-    },
-    {
-      "path": "packages/database"
-    },
-    {
-      "path": "packages/domain"
-    },
-    {
-      "path": "packages/mail"
-    },
-    {
       "path": "packages/ui"
     },
     {
-      "path": "apps/api"
-    },
-    {
-      "path": "apps/cli"
-    },
-    {
       "path": "apps/desktop"
-    },
-    {
-      "path": "apps/infra"
     },
     {
       "path": "apps/web"
