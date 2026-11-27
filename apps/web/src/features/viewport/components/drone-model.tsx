@@ -82,7 +82,7 @@ const ductProfile = (inner: number) => {
 };
 
 const bladeGeometry = (radius: number) => {
-  const geometry = new BoxGeometry(radius - 0.0035, 0.0006, 0.0062);
+  const geometry = new BoxGeometry(radius - 0.0035, 0.0004, 0.0026);
 
   geometry.translate((radius - 0.0035) / 2 + 0.0028, 0, 0);
 
@@ -102,6 +102,7 @@ interface Parts {
   readonly blade: BufferGeometry;
   readonly disc: BufferGeometry;
   readonly unitBox: BufferGeometry;
+  readonly unitBoxEdges: BufferGeometry;
   readonly lens: BufferGeometry;
   readonly antenna: BufferGeometry;
   readonly led: BufferGeometry;
@@ -125,6 +126,7 @@ const makeParts = (propRadius: number): Parts => {
     blade: bladeGeometry(propRadius),
     disc: new CircleGeometry(propRadius - 0.0005, 48),
     unitBox: new BoxGeometry(1, 1, 1),
+    unitBoxEdges: new EdgesGeometry(new BoxGeometry(1, 1, 1)),
     lens: new CylinderGeometry(0.0042, 0.0046, 0.006, 24),
     antenna: new CylinderGeometry(0.00045, 0.00045, 0.03, 6),
     led: new SphereGeometry(0.0011, 10, 8),
@@ -160,10 +162,9 @@ interface RotorProps {
   readonly parts: Parts;
   readonly materials: ReturnType<typeof droneMaterials>;
   readonly sampler: PoseSampler;
-  readonly showEdges: boolean;
 }
 
-const Rotor = ({ rotor, index, parts, materials, sampler, showEdges }: RotorProps) => {
+const Rotor = ({ rotor, index, parts, materials, sampler }: RotorProps) => {
   const spinner = useRef<Group>(null);
   const disc = useRef<Mesh>(null);
   const angle = useRef(index * 0.7);
@@ -200,13 +201,11 @@ const Rotor = ({ rotor, index, parts, materials, sampler, showEdges }: RotorProp
       />
       <group position={[x, y, z]}>
         <mesh geometry={parts.duct} material={materials.ducts} position={[0, -0.0015, 0]} />
-        {showEdges ? (
-          <lineSegments
-            geometry={parts.ductEdges}
-            material={materials.edges}
-            position={[0, -0.0015, 0]}
-          />
-        ) : null}
+        <lineSegments
+          geometry={parts.ductEdges}
+          material={materials.edges}
+          position={[0, -0.0015, 0]}
+        />
         <mesh geometry={parts.motorBase} material={materials.motor} position={[0, -0.0072, 0]} />
         <mesh
           geometry={parts.motorBell}
@@ -246,8 +245,7 @@ interface DroneModelProps {
 export const DroneModel = ({ layout, tone, sampler }: DroneModelProps) => {
   const propRadius = layout.airframe.prop_diameter_m / 2;
   const parts = useMemo(() => makeParts(propRadius), [propRadius]);
-  const colors = layout.airframe.colors;
-  const materials = useMemo(() => droneMaterials(tone, colors), [tone, colors]);
+  const materials = useMemo(() => droneMaterials(tone), [tone]);
 
   useEffect(
     () => () => {
@@ -276,18 +274,15 @@ export const DroneModel = ({ layout, tone, sampler }: DroneModelProps) => {
   const board = layout.board;
   const boardY = fc[1];
   const mcu = board.mcu.size_mm;
-  const showEdges = tone !== "studio";
 
   return (
     <group>
       <mesh geometry={parts.plate} material={materials.frame} position={[0, PLATE_Y, 0]} />
-      {showEdges ? (
-        <lineSegments
-          geometry={parts.plateEdges}
-          material={materials.edges}
-          position={[0, PLATE_Y, 0]}
-        />
-      ) : null}
+      <lineSegments
+        geometry={parts.plateEdges}
+        material={materials.edges}
+        position={[0, PLATE_Y, 0]}
+      />
       {layout.airframe.rotors.map((rotor, index) => (
         <Rotor
           key={rotor.id}
@@ -296,13 +291,17 @@ export const DroneModel = ({ layout, tone, sampler }: DroneModelProps) => {
           parts={parts}
           materials={materials}
           sampler={sampler}
-          showEdges={showEdges}
         />
       ))}
       <group position={[fc[0], boardY, fc[2]]}>
         <mesh
           geometry={parts.unitBox}
           material={materials.pcb}
+          scale={[fcSize[0], board.thickness_mm / 1000, fcSize[2]]}
+        />
+        <lineSegments
+          geometry={parts.unitBoxEdges}
+          material={materials.edges}
           scale={[fcSize[0], board.thickness_mm / 1000, fcSize[2]]}
         />
         <mesh
@@ -327,6 +326,11 @@ export const DroneModel = ({ layout, tone, sampler }: DroneModelProps) => {
       />
       <group position={battery}>
         <mesh geometry={parts.unitBox} material={materials.battery} scale={batterySize} />
+        <lineSegments
+          geometry={parts.unitBoxEdges}
+          material={materials.edges}
+          scale={batterySize}
+        />
         <mesh
           geometry={parts.unitBox}
           material={materials.batteryLabel}
@@ -336,6 +340,7 @@ export const DroneModel = ({ layout, tone, sampler }: DroneModelProps) => {
       </group>
       <group position={camera}>
         <mesh geometry={parts.unitBox} material={materials.camera} scale={cameraSize} />
+        <lineSegments geometry={parts.unitBoxEdges} material={materials.edges} scale={cameraSize} />
         <mesh
           geometry={parts.lens}
           material={materials.lens}
@@ -345,6 +350,11 @@ export const DroneModel = ({ layout, tone, sampler }: DroneModelProps) => {
       </group>
       <group position={receiver}>
         <mesh geometry={parts.unitBox} material={materials.receiver} scale={receiverSize} />
+        <lineSegments
+          geometry={parts.unitBoxEdges}
+          material={materials.edges}
+          scale={receiverSize}
+        />
         <mesh
           geometry={parts.antenna}
           material={materials.antenna}

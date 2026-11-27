@@ -18,6 +18,7 @@ import {
 } from "three";
 import type { Group, Mesh } from "three";
 
+import { PALETTE } from "../../../shared/palette.ts";
 import { frdToScene } from "../frames-of-reference.ts";
 import type { PoseSampler } from "../pose-sampler.ts";
 import { fade, show } from "../scene-mutations.ts";
@@ -30,19 +31,12 @@ const TRAIL_SECONDS = 8;
 
 const THRUST_METRES_PER_NEWTON = 0.085;
 
-const COOL = new Color("#22d3ee");
+const COOL = new Color(PALETTE.blue);
 
-const WARM = new Color("#f5a524");
+const HOT = new Color(PALETTE.fail);
 
-const HOT = new Color("#f05252");
-
-const thrustColor = (command: number, out: Color) => {
-  if (command < 0.55) return out.copy(COOL);
-
-  if (command < 0.8) return out.copy(COOL).lerp(WARM, (command - 0.55) / 0.25);
-
-  return out.copy(WARM).lerp(HOT, Math.min((command - 0.8) / 0.2, 1));
-};
+const thrustColor = (command: number, out: Color) =>
+  command < 0.85 ? out.copy(COOL) : out.copy(COOL).lerp(HOT, Math.min((command - 0.85) / 0.1, 1));
 
 const shadowTexture = () => {
   const canvas = document.createElement("canvas");
@@ -55,9 +49,9 @@ const shadowTexture = () => {
   if (context !== null) {
     const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
 
-    gradient.addColorStop(0, "rgba(0,0,0,0.85)");
-    gradient.addColorStop(0.45, "rgba(0,0,0,0.35)");
-    gradient.addColorStop(1, "rgba(0,0,0,0)");
+    gradient.addColorStop(0, "rgba(17,17,17,0.22)");
+    gradient.addColorStop(0.5, "rgba(17,17,17,0.08)");
+    gradient.addColorStop(1, "rgba(17,17,17,0)");
     context.fillStyle = gradient;
     context.fillRect(0, 0, 128, 128);
   }
@@ -78,8 +72,8 @@ const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
 
   const geometry = useMemo(
     () => ({
-      shaft: new CylinderGeometry(0.0011, 0.0011, 1, 10).translate(0, 0.5, 0),
-      head: new ConeGeometry(0.0032, 0.008, 14).translate(0, 0.004, 0),
+      shaft: new CylinderGeometry(0.00028, 0.00028, 1, 6).translate(0, 0.5, 0),
+      head: new ConeGeometry(0.0013, 0.0042, 12).translate(0, 0.0021, 0),
     }),
     [],
   );
@@ -91,8 +85,9 @@ const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
           new MeshBasicMaterial({
             color: COOL,
             transparent: true,
-            opacity: 0.9,
+            opacity: 1,
             depthWrite: false,
+            depthTest: false,
           }),
       ),
     [layout],
@@ -127,7 +122,7 @@ const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
       }
 
       if (head !== null && head !== undefined) {
-        head.position.y = 0.006 + length;
+        head.position.y = 0.004 + length;
         head.visible = thrust > 0.005;
       }
     });
@@ -147,7 +142,8 @@ const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
               }}
               geometry={geometry.shaft}
               material={material}
-              position={[0, 0.006, 0]}
+              position={[0, 0.004, 0]}
+              renderOrder={5}
             />
             <mesh
               ref={(mesh) => {
@@ -155,6 +151,7 @@ const ThrustVectors = ({ layout, sampler }: ThrustVectorsProps) => {
               }}
               geometry={geometry.head}
               material={material}
+              renderOrder={5}
             />
           </group>
         );
@@ -169,12 +166,12 @@ const CenterOfMass = () => {
       core: new SphereGeometry(0.0022, 16, 12),
       ring: new RingGeometry(0.0042, 0.0052, 40),
       coreMaterial: new MeshBasicMaterial({
-        color: "#f8fafc",
+        color: PALETTE.ink,
         depthTest: false,
         transparent: true,
       }),
       ringMaterial: new MeshBasicMaterial({
-        color: "#f8fafc",
+        color: PALETTE.ink,
         transparent: true,
         opacity: 0.7,
         depthTest: false,
@@ -229,13 +226,14 @@ export const FlightRig = ({
   const target = useRef<Group>(null);
   const shadow = useRef<Mesh>(null);
   const xray = tone === "xray";
+  const solid = tone === "studio" || tone === "xray";
 
   const trailParts = useMemo(() => {
     const geometry = new BufferGeometry();
     const positions = new Float32Array(TRAIL_POINTS * 3);
     const colors = new Float32Array(TRAIL_POINTS * 3);
     const tint = new Color(trailColor);
-    const background = new Color("#0b0e14");
+    const background = new Color(PALETTE.ground);
 
     for (let index = 0; index < TRAIL_POINTS; index += 1) {
       const mixed = background.clone().lerp(tint, (index / (TRAIL_POINTS - 1)) ** 1.6);
@@ -262,7 +260,7 @@ export const FlightRig = ({
         map: shadowTexture(),
         transparent: true,
         depthWrite: false,
-        opacity: 0.8,
+        opacity: 1,
       }),
     }),
     [],
@@ -326,7 +324,7 @@ export const FlightRig = ({
 
       shadow.current.position.set(pose.position[0], 0.0006, pose.position[2]);
       shadow.current.scale.set(spread, spread, 1);
-      fade(shadowParts.material, 0.75 / (1 + height * 1.4));
+      fade(shadowParts.material, 1 / (1 + height * 1.4));
     }
 
     {
@@ -342,7 +340,7 @@ export const FlightRig = ({
         trailParts.geometry.computeBoundingSphere();
       }
 
-      show(trailParts.line, points.length === TRAIL_POINTS);
+      show(trailParts.line, xray && points.length === TRAIL_POINTS);
     }
   });
 
@@ -350,7 +348,7 @@ export const FlightRig = ({
     <group>
       <group ref={body}>
         <DroneModel layout={layout} tone={tone} sampler={sampler} />
-        {xray ? <ThrustVectors layout={layout} sampler={sampler} /> : null}
+        {solid ? <ThrustVectors layout={layout} sampler={sampler} /> : null}
         {xray ? <CenterOfMass /> : null}
       </group>
       <group ref={target}>
