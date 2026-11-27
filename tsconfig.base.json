@@ -87,6 +87,8 @@
           "effect/sql",
           "effect/observability",
           "effect/reactivity",
+          "effect/socket",
+          "effect/process",
           "effect/FileSystem",
           "effect/Path",
           "@effect/atom-react",
