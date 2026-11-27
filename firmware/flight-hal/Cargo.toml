@@ -1,5 +1,6 @@
 [package]
 name = "flight-hal"
+description = "Hardware traits flight-core runs against: IMU, barometer, battery ADC, motors, radio and clock (no_std)."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

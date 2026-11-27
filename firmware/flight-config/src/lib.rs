@@ -64,6 +64,10 @@ pub use generated::palm_x4_2in;
 
 pub const DEFAULT: &AirframeConstants = &palm_x4_2in::AIRFRAME;
 
+pub fn by_id(id: &str) -> Option<&'static AirframeConstants> {
+    generated::ALL.iter().copied().find(|a| a.id == id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

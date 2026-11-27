@@ -12,7 +12,7 @@ environment:
   turbulence: none
 initial:
   position_m: [0, 0, 0]
-  battery_soc: 0.10
+  battery_soc: 0.06
 pilot:
   - { t: 0.5, arm: true, mode: althold, throttle: 0.5 }
   - { t: 1.0, throttle: 0.85 }
