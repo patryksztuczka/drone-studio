@@ -5,7 +5,7 @@ export class RendererLoadError extends Schema.TaggedError<
   { readonly brand: unique symbol }
 >()("RendererLoadError", { url: Schema.String, reason: Schema.String }) {
   override get message() {
-    return `The window could not load ${this.url}: ${this.reason}. In development, check that pnpm dev is running for this checkout.`;
+    return `The window could not load ${this.url}: ${this.reason}. In development, start the window with pnpm dev:desktop.`;
   }
 }
 

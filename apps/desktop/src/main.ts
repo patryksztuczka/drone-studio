@@ -7,10 +7,10 @@ import { BundleReadError, RendererLoadError } from "./desktop.errors.ts";
 import { NavigationVerdict, navigationVerdict } from "./navigation.ts";
 import {
   appUrl,
+  BUNDLE_ORIGIN,
   RendererSource,
   Resolution,
   resolveBundleRequest,
-  withAppOrigin,
 } from "./renderer-source.ts";
 import type { Bundle } from "./renderer-source.ts";
 
@@ -25,11 +25,10 @@ const rendererSource = Effect.gen(function* () {
     return RendererSource.cases.DevServer.make({ url: devServer.value });
 
   const path = yield* Path.Path;
-  const origin = yield* Config.URL("DESKTOP_APP_URL");
 
   return RendererSource.cases.Bundle.make({
     directory: path.resolve(app.getAppPath(), "..", "web", "dist"),
-    origin,
+    origin: BUNDLE_ORIGIN,
   });
 });
 
@@ -59,10 +58,6 @@ const respond = (bundle: Bundle, request: Request) =>
   Resolution.match(resolveBundleRequest(bundle, new URL(request.url)), {
     File: (resolution) => serveFile(resolution.directory, resolution.relativePath),
     NotFound: () => Effect.succeed(notFound()),
-    Api: () =>
-      throughNetwork(
-        new Request(request, { headers: withAppOrigin(request.headers, bundle.origin) }),
-      ),
     Network: () => throughNetwork(request),
   });
 
@@ -236,7 +231,7 @@ const runShell = (source: RendererSource, icon: string) =>
     yield* Deferred.await(quitRequested);
   }).pipe(Effect.scoped);
 
-const APP_NAME = "drone-studio";
+const APP_NAME = "Drone Studio";
 
 const program = Effect.gen(function* () {
   const path = yield* Path.Path;

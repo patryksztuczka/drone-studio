@@ -12,18 +12,14 @@ export type Bundle = typeof RendererSource.cases.Bundle.Type;
 export const Resolution = Schema.TaggedUnion({
   File: { directory: Schema.String, relativePath: Schema.String },
   NotFound: {},
-  Api: {},
   Network: {},
 });
 
 export type Resolution = typeof Resolution.Type;
 
-const API_PREFIX = "/api";
+export const BUNDLE_ORIGIN = new URL("https://studio.invalid");
 
 const decodePathname = Schema.decodeOption(Schema.StringFromUriComponent);
-
-const isApiPath = (pathname: string) =>
-  pathname === API_PREFIX || pathname.startsWith(`${API_PREFIX}/`);
 
 const isUnsafeSegment = (segment: string) =>
   segment === "." || segment === ".." || segment.includes("\u0000");
@@ -57,15 +53,5 @@ const bundleFile = (directory: string, pathname: string): Resolution =>
 export const resolveBundleRequest = (bundle: Bundle, requested: URL): Resolution => {
   if (!isSameOrigin(requested, bundle.origin)) return Resolution.cases.Network.make({});
 
-  return isApiPath(requested.pathname)
-    ? Resolution.cases.Api.make({})
-    : bundleFile(bundle.directory, requested.pathname);
-};
-
-export const withAppOrigin = (headers: Headers, origin: URL): Headers => {
-  const result = new Headers(headers);
-
-  if (!result.has("origin")) result.set("origin", origin.origin);
-
-  return result;
+  return bundleFile(bundle.directory, requested.pathname);
 };

@@ -6,7 +6,7 @@ const app = new URL("https://app.example.com/");
 
 describe("navigationVerdict", () => {
   it("stays on a page of the app", () => {
-    expect(navigationVerdict(app, "https://app.example.com/todos?x=1")).toEqual(
+    expect(navigationVerdict(app, "https://app.example.com/telemetry?run=1")).toEqual(
       NavigationVerdict.cases.Stay.make({}),
     );
   });
