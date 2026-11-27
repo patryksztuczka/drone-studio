@@ -16,6 +16,10 @@
   --fail: #e5484d;
   --amber: #e58a00;
   --amber-soft: #fff4e0;
+  --ghost: #7c5cff;
+  --magenta: #d6409f;
+  --olive: #5e9e00;
+  --gust: #1c7fc4;
   --background: var(--bg);
   --foreground: var(--ink);
   --card: var(--surface);
@@ -67,6 +71,10 @@
   --color-fail: var(--fail);
   --color-amber: var(--amber);
   --color-amber-soft: var(--amber-soft);
+  --color-ghost: var(--ghost);
+  --color-magenta: var(--magenta);
+  --color-olive: var(--olive);
+  --color-gust: var(--gust);
   --shadow-card: 0 10px 30px #1111110f;
   --shadow-menu: 0 18px 48px #1111111a;
   --shadow-toast: 0 6px 18px #1111110f;

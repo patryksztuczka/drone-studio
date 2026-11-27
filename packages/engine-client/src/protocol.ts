@@ -246,12 +246,6 @@ export const Performance = Schema.Struct({
 
 export type Performance = typeof Performance.Type;
 
-const AnalogInput = Schema.Struct({
-  adc: Schema.String,
-  channel: Schema.Number,
-  pin: Schema.String,
-});
-
 export const BoardLayout = Schema.Struct({
   airframe: Schema.Struct({
     id: AirframeId,
@@ -286,10 +280,8 @@ export const BoardLayout = Schema.Struct({
     pads: Schema.Array(Pad),
     motor_outputs: Schema.Array(MotorOutput),
     mounting_holes_mm: Schema.Array(Vector2),
-    analog: Schema.optional(Schema.Struct({ current: AnalogInput, vbat: AnalogInput })),
   }),
   performance: Performance,
-  source_hash: Schema.optional(Schema.String),
 });
 
 export type BoardLayout = typeof BoardLayout.Type;
