@@ -42,6 +42,17 @@ pnpm dev:desktop     # the Studio window on this checkout's web dev server
 
 [Local development](docs/operations/development.md) covers ports, the environment and bundle mode.
 
+## Fly it
+
+```sh
+cargo run -q --release -p drone-cli -- sim suite            # five baseline scenarios in SITL, under two seconds
+cargo run -q --release -p drone-cli -- analyze latest --anomalies
+cargo run -q --release -p drone-cli -- emu smoke            # the real STM32H743 firmware booted in Renode (Docker)
+pnpm dev:desktop                                            # Drone Studio, with drone-engine started for you
+```
+
+The [flight lab guide](docs/user/flight-lab.md) covers tuning, diffs and the MCP tools; the [Studio guide](docs/user/studio.md) covers the desktop app.
+
 ## Thanks
 
 Drone Studio's tooling comes from the boberstack template, which borrows from people who got there first:
