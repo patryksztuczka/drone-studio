@@ -122,7 +122,7 @@ const PadMark = ({ pad, lit, dim, onHover }: PadMarkProps) => {
         }
         fontSize={1.05}
         fill={lit ? color : "#7b8698"}
-        fontFamily="JetBrains Mono Variable, monospace"
+        fontFamily="Geist Mono Variable, monospace"
         pointerEvents="none"
       >
         {pad.label}
@@ -177,7 +177,7 @@ const DeviceMark = ({ device, lit, onHover }: DeviceMarkProps) => {
         textAnchor="middle"
         fontSize={0.95}
         fill={color}
-        fontFamily="JetBrains Mono Variable, monospace"
+        fontFamily="Geist Mono Variable, monospace"
         pointerEvents="none"
       >
         {device.type === "imu" ? "IMU" : "BARO"}
@@ -305,7 +305,7 @@ export const BoardView = ({ layout }: BoardViewProps) => {
             pointerEvents="none"
             fontSize={0.9}
             fill="#22d3ee"
-            fontFamily="JetBrains Mono Variable, monospace"
+            fontFamily="Geist Mono Variable, monospace"
           >
             FRONT
           </text>
@@ -417,7 +417,7 @@ export const BoardView = ({ layout }: BoardViewProps) => {
               textAnchor="middle"
               fontSize={1.25}
               fill="#c9d1dc"
-              fontFamily="JetBrains Mono Variable, monospace"
+              fontFamily="Geist Mono Variable, monospace"
             >
               STM32H743
             </text>
@@ -428,7 +428,7 @@ export const BoardView = ({ layout }: BoardViewProps) => {
               textAnchor="middle"
               fontSize={0.85}
               fill="#4a5466"
-              fontFamily="JetBrains Mono Variable, monospace"
+              fontFamily="Geist Mono Variable, monospace"
             >
               {mcu.core} · {String(mcu.clock_hz / 1_000_000)} MHz
             </text>

@@ -1,5 +1,5 @@
 import "@fontsource-variable/inter";
-import "@fontsource-variable/jetbrains-mono";
+import "@fontsource-variable/geist-mono";
 import "@drone-studio/ui/globals.css";
 import { RegistryProvider } from "@effect/atom-react";
 import { StrictMode } from "react";

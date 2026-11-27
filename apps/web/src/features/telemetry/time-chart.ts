@@ -24,7 +24,7 @@ export interface ChartSpec {
   readonly axes: ReadonlyArray<AxisSpec>;
 }
 
-const FONT = '10px "JetBrains Mono Variable", ui-monospace, monospace';
+const FONT = '10px "Geist Mono Variable", ui-monospace, monospace';
 
 const GRID = "#1b212c";
 
