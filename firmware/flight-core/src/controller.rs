@@ -99,6 +99,7 @@ pub struct FlightController {
     rc_seen: bool,
     rc_last_us: u64,
     rc_was_valid: bool,
+    rc_ever_valid: bool,
     prev_arm_switch: bool,
     battery_lpf: Pt1,
     low_battery_s: f32,
@@ -154,6 +155,7 @@ impl FlightController {
             rc_seen: false,
             rc_last_us: 0,
             rc_was_valid: false,
+            rc_ever_valid: false,
             prev_arm_switch: false,
             battery_lpf: Pt1::new(1.0, dt),
             low_battery_s: 0.0,
@@ -368,7 +370,7 @@ impl FlightController {
             self.rc_last_us = input.time_us;
         }
         let rc_valid = self.rc_valid();
-        if rc_valid != self.rc_was_valid && self.rc_seen {
+        if rc_valid != self.rc_was_valid && self.rc_ever_valid {
             let code = if rc_valid {
                 LogCode::RcRestored
             } else {
@@ -376,6 +378,7 @@ impl FlightController {
             };
             self.log(LogLevel::Warn, code, [0, 0]);
         }
+        self.rc_ever_valid |= rc_valid;
         self.rc_was_valid = rc_valid;
 
         let cells = f32::from(self.cfg.battery_cells);
@@ -402,6 +405,10 @@ impl FlightController {
         };
 
         if !self.calibrated {
+            let arm_switch = self.rc.arm && rc_valid;
+            if arm_switch && !self.prev_arm_switch {
+                self.log(LogLevel::Warn, LogCode::ArmRejected, [1, 0]);
+            }
             if fresh_imu {
                 self.calibrate(fresh_baro.as_ref());
             }
@@ -730,5 +737,98 @@ impl FlightController {
         self.logs.copy_within(i..n, 0);
         self.log_len = n - i;
         out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn level_inputs(t_us: u64, seq: u32, rc: Option<RcFrame>) -> Inputs {
+        let cfg = flight_config::DEFAULT;
+        Inputs {
+            time_us: t_us,
+            imu: Some(ImuSample {
+                seq,
+                gyro_raw: [0, 0, 0],
+                accel_raw: [0, 0, -(cfg.accel_lsb_per_g as i16)],
+            }),
+            baro: Some(BaroSample {
+                seq: seq / 20 + 1,
+                pressure_pa: 99_900.0,
+                temperature_c: 20.0,
+            }),
+            battery: BatterySample {
+                vbat_raw: (8.2 / cfg.vbat_volts_per_count) as u16,
+                current_raw: 0,
+            },
+            rc,
+        }
+    }
+
+    fn stick(arm: bool, throttle: f32) -> RcFrame {
+        RcFrame {
+            throttle,
+            arm,
+            mode: ModeSwitch::AltHold,
+            ..RcFrame::default()
+        }
+    }
+
+    fn run(fc: &mut FlightController, from: u32, to: u32, rc: Option<RcFrame>) -> Vec<LogCode> {
+        let mut codes = Vec::new();
+        for i in from..to {
+            let out = fc.step(&level_inputs(u64::from(i) * 1000, i + 1, rc));
+            codes.extend(out.logs().iter().map(|l| l.code));
+        }
+        codes
+    }
+
+    extern crate std;
+    use std::vec::Vec;
+
+    #[test]
+    fn arming_needs_calibration_and_a_low_stick() {
+        let mut fc = FlightController::new(flight_config::DEFAULT);
+        run(&mut fc, 0, 10, Some(stick(false, 0.5)));
+        let early = run(&mut fc, 10, 20, Some(stick(true, 0.5)));
+        assert!(early.contains(&LogCode::ArmRejected));
+        assert_eq!(fc.arm_state(), ArmState::Disarmed);
+        run(&mut fc, 20, 400, Some(stick(false, 0.5)));
+        assert!(fc.is_calibrated());
+        let high = run(&mut fc, 400, 410, Some(stick(true, 0.9)));
+        assert!(high.contains(&LogCode::ArmRejected));
+        run(&mut fc, 410, 420, Some(stick(false, 0.5)));
+        let ok = run(&mut fc, 420, 430, Some(stick(true, 0.5)));
+        assert!(ok.contains(&LogCode::Armed));
+        assert_eq!(fc.arm_state(), ArmState::Armed);
+        let off = run(&mut fc, 430, 440, Some(stick(false, 0.5)));
+        assert!(off.contains(&LogCode::Disarmed));
+    }
+
+    #[test]
+    fn radio_loss_on_the_ground_disarms_through_failsafe() {
+        let mut fc = FlightController::new(flight_config::DEFAULT);
+        run(&mut fc, 0, 400, Some(stick(false, 0.5)));
+        run(&mut fc, 400, 410, Some(stick(true, 0.5)));
+        assert_eq!(fc.arm_state(), ArmState::Armed);
+        let lost = run(&mut fc, 410, 800, None);
+        assert!(lost.contains(&LogCode::RcLost));
+        assert!(lost.contains(&LogCode::FailsafeEntered));
+        assert_eq!(fc.failsafe_reason(), Some(FailsafeReason::RcLoss));
+        assert_eq!(fc.arm_state(), ArmState::Disarmed);
+    }
+
+    #[test]
+    fn disarmed_motors_stay_off() {
+        let mut fc = FlightController::new(flight_config::DEFAULT);
+        for i in 0..600 {
+            let out = fc.step(&level_inputs(
+                u64::from(i) * 1000,
+                i + 1,
+                Some(stick(false, 1.0)),
+            ));
+            assert_eq!(out.motors, [0.0; 4]);
+        }
     }
 }
