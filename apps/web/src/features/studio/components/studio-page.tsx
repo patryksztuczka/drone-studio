@@ -104,7 +104,7 @@ export const StudioPage = () => {
         </>
       )}
       {cinematic ? <ShowcaseOverlay /> : <TopBar />}
-      <StickHud />
+      {flying ? <StickHud /> : null}
     </div>
   );
 };
