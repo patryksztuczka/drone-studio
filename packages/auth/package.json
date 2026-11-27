@@ -1,0 +1,19 @@
+{
+  "name": "@drone-studio/auth",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@alchemy.run/better-auth": "catalog:",
+    "@better-auth/expo": "1.7.14",
+    "@better-auth/mcp": "1.7.14",
+    "@better-auth/oauth-provider": "1.7.14",
+    "@drone-studio/core": "workspace:*",
+    "@drone-studio/domain": "workspace:*",
+    "alchemy": "catalog:",
+    "better-auth": "catalog:",
+    "effect": "catalog:"
+  }
+}

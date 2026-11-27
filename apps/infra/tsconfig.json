@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "node_modules/.cache/tsc",
+    "types": ["node"]
+  },
+  "include": ["alchemy.run.ts", "cloudflare.run.ts", "src"],
+  "references": [
+    {
+      "path": "../api"
+    },
+    {
+      "path": "../../packages/auth"
+    },
+    {
+      "path": "../../packages/capability"
+    }
+  ]
+}

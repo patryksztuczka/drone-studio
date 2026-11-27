@@ -1,0 +1,100 @@
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "lib": ["es2024"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "isolatedModules": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "ignoreEffectWarningsInTscExitCode": false,
+        "ignoreEffectErrorsInTscExitCode": false,
+        "diagnosticSeverity": {
+          "floatingEffect": "error",
+          "floatingEffectInVitest": "error",
+          "missingEffectError": "error",
+          "missingEffectContext": "error",
+          "missingLayerContext": "error",
+          "missingStarInYieldEffectGen": "error",
+          "anyUnknownInErrorContext": "error",
+          "outdatedApi": "error",
+          "duplicatePackage": "error",
+          "unsafeEffectTypeAssertion": "error",
+          "promiseInEffectSuccess": "error",
+          "effectInFailure": "error",
+          "effectInVoidSuccess": "error",
+          "returnEffectInGen": "error",
+          "runEffectInsideEffect": "error",
+          "tryCatchInEffectGen": "error",
+          "lazyPromiseInEffectSync": "error",
+          "catchUnfailableEffect": "error",
+          "scopeInLayerEffect": "error",
+          "globalErrorInEffectFailure": "error",
+          "globalErrorInEffectCatch": "error",
+          "unknownInEffectCatch": "error",
+          "extendsNativeError": "error",
+          "instanceOfSchema": "error",
+          "globalFetch": "error",
+          "globalFetchInEffect": "error",
+          "globalDate": "error",
+          "globalDateInEffect": "error",
+          "globalRandom": "error",
+          "globalRandomInEffect": "error",
+          "globalTimers": "error",
+          "globalTimersInEffect": "error",
+          "globalConsole": "error",
+          "globalConsoleInEffect": "error",
+          "processEnv": "error",
+          "processEnvInEffect": "error",
+          "cryptoRandomUUID": "error",
+          "cryptoRandomUUIDInEffect": "error",
+          "nodeBuiltinImport": "error",
+          "abortControllerInEffect": "error"
+        },
+        "overrides": [
+          {
+            "include": ["**/vite.config.ts", "**/app.config.ts"],
+            "options": { "diagnosticSeverity": { "processEnv": "off" } }
+          },
+          {
+            "include": ["**/tools/oxlint/**/*.ts"],
+            "options": { "diagnosticSeverity": { "nodeBuiltinImport": "off" } }
+          }
+        ],
+        "allowedUnstableApis": [
+          "effect/ai",
+          "effect/http",
+          "effect/http-api",
+          "effect/rpc",
+          "effect/cli",
+          "effect/sql",
+          "effect/observability",
+          "effect/reactivity",
+          "effect/FileSystem",
+          "effect/Path",
+          "@effect/atom-react",
+          "@effect/platform-node",
+          "@effect/sql-pg",
+          "@effect/vitest"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@drone-studio/client-runtime",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*/index.ts"
+  },
+  "scripts": {
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@drone-studio/domain": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

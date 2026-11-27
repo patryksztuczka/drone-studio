@@ -1,0 +1,30 @@
+{
+  "name": "@drone-studio/api",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./app": "./src/app.layer.ts"
+  },
+  "scripts": {
+    "dev": "varlock run --path ../.. -- node --watch src/server.ts",
+    "start": "node src/server.ts",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@alchemy.run/better-auth": "catalog:",
+    "@drone-studio/auth": "workspace:*",
+    "@drone-studio/capability": "workspace:*",
+    "@drone-studio/core": "workspace:*",
+    "@drone-studio/database": "workspace:*",
+    "@drone-studio/domain": "workspace:*",
+    "@drone-studio/mail": "workspace:*",
+    "@effect/platform-node": "catalog:",
+    "@effect/sql-pg": "catalog:",
+    "effect": "catalog:",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

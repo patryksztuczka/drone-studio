@@ -1,0 +1,11 @@
+import { HttpApi, OpenApi } from "effect/http-api";
+
+import { SignInMethodsHttpApi } from "./identity/sign-in-methods.http-api.ts";
+import { HealthHttpApi } from "./system/health.http-api.ts";
+import { TodosHttpApi } from "./todos/todos.contracts.ts";
+
+export class Api extends HttpApi.make("drone-studio")
+  .add(HealthHttpApi)
+  .add(SignInMethodsHttpApi)
+  .add(TodosHttpApi)
+  .annotateMerge(OpenApi.annotations({ title: "drone-studio API" })) {}
