@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/motor.schema.json",
+  "title": "Brushless motor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "name",
+    "stator_mm",
+    "kv_rpm_per_v",
+    "mass_g",
+    "winding_resistance_ohm",
+    "no_load_current_a",
+    "max_current_a",
+    "time_constant_s",
+    "shaft_mm"
+  ],
+  "properties": {
+    "kind": { "const": "motor" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "stator_mm": { "$ref": "common.schema.json#/$defs/vec2" },
+    "kv_rpm_per_v": { "type": "number", "minimum": 500, "maximum": 40000 },
+    "mass_g": { "type": "number", "exclusiveMinimum": 0, "maximum": 200 },
+    "winding_resistance_ohm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5 },
+    "no_load_current_a": { "type": "number", "minimum": 0, "maximum": 5 },
+    "max_current_a": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 },
+    "time_constant_s": { "type": "number", "minimum": 0.001, "maximum": 0.5 },
+    "shaft_mm": { "type": "number", "exclusiveMinimum": 0 }
+  }
+}

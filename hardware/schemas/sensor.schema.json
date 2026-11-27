@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/sensor.schema.json",
+  "title": "Sensor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "name", "type", "interface", "mass_g", "identity"],
+  "properties": {
+    "kind": { "const": "sensor" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "type": { "enum": ["imu", "barometer"] },
+    "interface": { "enum": ["spi", "i2c"] },
+    "mass_g": { "type": "number", "minimum": 0, "maximum": 50 },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["register", "value"],
+      "properties": {
+        "register": { "$ref": "common.schema.json#/$defs/byte" },
+        "value": { "$ref": "common.schema.json#/$defs/byte" }
+      }
+    },
+    "imu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gyro_range_dps",
+        "gyro_lsb_per_dps",
+        "accel_range_g",
+        "accel_lsb_per_g",
+        "odr_hz",
+        "latency_us",
+        "gyro_noise_density_dps_rthz",
+        "accel_noise_density_ug_rthz",
+        "gyro_bias_instability_dps",
+        "gyro_bias_random_walk_dps_rthz",
+        "accel_bias_instability_mg"
+      ],
+      "properties": {
+        "gyro_range_dps": { "enum": [125, 250, 500, 1000, 2000, 4000] },
+        "gyro_lsb_per_dps": { "$ref": "common.schema.json#/$defs/positiveNumber" },
+        "accel_range_g": { "enum": [2, 4, 8, 16, 32] },
+        "accel_lsb_per_g": { "$ref": "common.schema.json#/$defs/positiveNumber" },
+        "odr_hz": { "type": "number", "minimum": 100, "maximum": 32000 },
+        "latency_us": { "type": "number", "minimum": 0, "maximum": 20000 },
+        "gyro_noise_density_dps_rthz": { "type": "number", "minimum": 0, "maximum": 1 },
+        "accel_noise_density_ug_rthz": { "type": "number", "minimum": 0, "maximum": 5000 },
+        "gyro_bias_instability_dps": { "type": "number", "minimum": 0, "maximum": 50 },
+        "gyro_bias_random_walk_dps_rthz": { "type": "number", "minimum": 0, "maximum": 1 },
+        "accel_bias_instability_mg": { "type": "number", "minimum": 0, "maximum": 500 }
+      }
+    },
+    "barometer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "i2c_address",
+        "odr_hz",
+        "latency_us",
+        "pressure_noise_pa",
+        "temperature_noise_c"
+      ],
+      "properties": {
+        "i2c_address": { "type": "integer", "minimum": 8, "maximum": 119 },
+        "odr_hz": { "type": "number", "minimum": 1, "maximum": 400 },
+        "latency_us": { "type": "number", "minimum": 0, "maximum": 100000 },
+        "pressure_noise_pa": { "type": "number", "minimum": 0, "maximum": 100 },
+        "temperature_noise_c": { "type": "number", "minimum": 0, "maximum": 5 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "imu" } } },
+      "then": { "required": ["imu"], "not": { "required": ["barometer"] } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "barometer" } } },
+      "then": { "required": ["barometer"], "not": { "required": ["imu"] } }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+kind: battery
+id: 2s_450mah_lipo
+name: 2S 450 mAh LiPo
+chemistry: lipo
+cells: 2
+capacity_mah: 450
+mass_g: 27
+max_discharge_c: 80
+cell_voltage:
+  full: 4.20
+  nominal: 3.70
+  empty: 3.30
+ocv_curve:
+  - [0.00, 3.30]
+  - [0.05, 3.50]
+  - [0.10, 3.60]
+  - [0.20, 3.68]
+  - [0.40, 3.75]
+  - [0.60, 3.85]
+  - [0.80, 4.00]
+  - [0.90, 4.10]
+  - [1.00, 4.20]
+thevenin:
+  r0_ohm: 0.050
+  r1_ohm: 0.022
+  c1_f: 500

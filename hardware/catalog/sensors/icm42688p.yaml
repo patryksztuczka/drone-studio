@@ -1,0 +1,21 @@
+kind: sensor
+id: icm42688p
+name: TDK InvenSense ICM-42688-P
+type: imu
+interface: spi
+mass_g: 0.02
+identity:
+  register: 0x75
+  value: 0x47
+imu:
+  gyro_range_dps: 2000
+  gyro_lsb_per_dps: 16.4
+  accel_range_g: 16
+  accel_lsb_per_g: 2048
+  odr_hz: 1000
+  latency_us: 250
+  gyro_noise_density_dps_rthz: 0.0028
+  accel_noise_density_ug_rthz: 70
+  gyro_bias_instability_dps: 0.5
+  gyro_bias_random_walk_dps_rthz: 0.002
+  accel_bias_instability_mg: 20

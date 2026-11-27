@@ -1,0 +1,20 @@
+kind: mcu
+id: stm32h743vi
+name: STM32H743VIT6
+vendor: STMicroelectronics
+core: cortex-m7
+fpu: fpv5-d16
+clock_hz: 480000000
+flash_kb: 2048
+ram_kb: 1024
+rust_target: thumbv7em-none-eabihf
+embassy_chip: stm32h743vi
+renode:
+  platform: platforms/cpus/stm32h743.repl
+peripherals:
+  spi: [spi1, spi2, spi3, spi4]
+  i2c: [i2c1, i2c2, i2c4]
+  uart: [usart1, usart2, usart3, uart4, uart7, uart8]
+  timers: [tim1, tim2, tim3, tim4, tim5, tim8]
+  adc: [adc1, adc3]
+  usb: [usb_otg_fs]

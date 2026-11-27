@@ -1,0 +1,10 @@
+[package]
+name = "flight-config"
+description = "Airframe and board constants generated from hardware/ by `drone codegen` (no_std)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true

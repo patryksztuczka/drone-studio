@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/common.schema.json",
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]*$", "maxLength": 64 },
+    "pin": { "type": "string", "pattern": "^P[A-K](1[0-5]|[0-9])$" },
+    "positiveNumber": { "type": "number", "exclusiveMinimum": 0 },
+    "vec2": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+    "vec3": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "window": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0 },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "byte": { "type": "integer", "minimum": 0, "maximum": 255 }
+  }
+}

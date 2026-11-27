@@ -8,7 +8,14 @@ export default defineConfig({
     printWidth: 100,
     sortPackageJson: true,
     sortImports: {},
-    ignorePatterns: ["tools/oxlint/anti-slop/**", ".scratch/**", "pnpm-lock.yaml"],
+    ignorePatterns: [
+      "tools/oxlint/anti-slop/**",
+      ".scratch/**",
+      "pnpm-lock.yaml",
+      "hardware/generated/**",
+      "emu/generated/**",
+      "runs/**",
+    ],
   },
   staged: {
     "*": "vp check --fix",

@@ -1,0 +1,7 @@
+kind: frame
+id: palm_95_ducted
+name: Palm 95 mm printed ducted frame
+material: petg
+mass_g: 34
+wheelbase_mm: 98
+size_mm: [118, 118, 22]

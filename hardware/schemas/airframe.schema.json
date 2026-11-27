@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/airframe.schema.json",
+  "title": "Airframe assembly",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "name",
+    "description",
+    "configuration",
+    "frame",
+    "board",
+    "battery",
+    "motor",
+    "prop",
+    "board_mount",
+    "rotors",
+    "components",
+    "landing_points_mm",
+    "aerodynamics",
+    "vibration",
+    "limits",
+    "loop_rates",
+    "visual"
+  ],
+  "properties": {
+    "kind": { "const": "airframe" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "configuration": { "enum": ["quad_x"] },
+    "frame": { "$ref": "common.schema.json#/$defs/id" },
+    "board": { "$ref": "common.schema.json#/$defs/id" },
+    "battery": { "$ref": "common.schema.json#/$defs/id" },
+    "motor": { "$ref": "common.schema.json#/$defs/id" },
+    "prop": { "$ref": "common.schema.json#/$defs/id" },
+    "board_mount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position_mm", "yaw_deg"],
+      "properties": {
+        "position_mm": { "$ref": "common.schema.json#/$defs/vec3" },
+        "yaw_deg": { "enum": [0, 90, 180, 270] }
+      }
+    },
+    "rotors": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "output", "position_mm", "spin"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "output": { "$ref": "common.schema.json#/$defs/id" },
+          "position_mm": { "$ref": "common.schema.json#/$defs/vec3" },
+          "spin": { "enum": ["cw", "ccw"] }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "position_mm", "size_mm"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "ref": { "enum": ["battery", "board", "frame"] },
+          "mass_g": { "type": "number", "minimum": 0, "maximum": 2000 },
+          "position_mm": { "$ref": "common.schema.json#/$defs/vec3" },
+          "size_mm": { "$ref": "common.schema.json#/$defs/vec3" }
+        },
+        "oneOf": [{ "required": ["ref"] }, { "required": ["mass_g"] }]
+      }
+    },
+    "landing_points_mm": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "common.schema.json#/$defs/vec3" }
+    },
+    "aerodynamics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drag_area_m2", "drag_coefficient"],
+      "properties": {
+        "drag_area_m2": { "$ref": "common.schema.json#/$defs/vec3" },
+        "drag_coefficient": { "type": "number", "minimum": 0, "maximum": 3 }
+      }
+    },
+    "vibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rotor_imbalance_accel_mps2",
+        "rotor_imbalance_gyro_dps",
+        "broadband_accel_mps2",
+        "broadband_gyro_dps"
+      ],
+      "properties": {
+        "rotor_imbalance_accel_mps2": { "type": "number", "minimum": 0, "maximum": 50 },
+        "rotor_imbalance_gyro_dps": { "type": "number", "minimum": 0, "maximum": 50 },
+        "broadband_accel_mps2": { "type": "number", "minimum": 0, "maximum": 50 },
+        "broadband_gyro_dps": { "type": "number", "minimum": 0, "maximum": 50 }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tilt_deg",
+        "max_rate_dps",
+        "max_climb_mps",
+        "battery_warning_cell_v",
+        "battery_critical_cell_v"
+      ],
+      "properties": {
+        "max_tilt_deg": { "type": "number", "minimum": 5, "maximum": 80 },
+        "max_rate_dps": { "$ref": "common.schema.json#/$defs/vec3" },
+        "max_climb_mps": { "type": "number", "exclusiveMinimum": 0, "maximum": 20 },
+        "battery_warning_cell_v": { "type": "number", "minimum": 3.0, "maximum": 4.2 },
+        "battery_critical_cell_v": { "type": "number", "minimum": 2.8, "maximum": 4.0 }
+      }
+    },
+    "loop_rates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["physics_hz", "control_hz", "telemetry_hz"],
+      "properties": {
+        "physics_hz": { "type": "integer", "minimum": 500, "maximum": 20000 },
+        "control_hz": { "type": "integer", "minimum": 100, "maximum": 8000 },
+        "telemetry_hz": { "type": "integer", "minimum": 1, "maximum": 240 }
+      }
+    },
+    "visual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["procedural", "colors"],
+      "properties": {
+        "procedural": { "type": "boolean" },
+        "mesh": { "type": "string", "pattern": "\\.glb$" },
+        "colors": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+        }
+      }
+    }
+  }
+}

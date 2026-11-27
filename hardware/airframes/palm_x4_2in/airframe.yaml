@@ -1,0 +1,52 @@
+kind: airframe
+id: palm_x4_2in
+name: Palm X4 2"
+description: Palm-sized 2-inch quadcopter, printed ducted frame, 2S LiHV, STM32H743 AIO.
+configuration: quad_x
+frame: palm_95_ducted
+board: ref_h743_aio
+battery: 2s_550mah_lihv
+motor: 1202_5_8000kv
+prop: gemfan_2023_3blade
+board_mount:
+  position_mm: [0.0, 0.0, -4.0]
+  yaw_deg: 0
+rotors:
+  - { id: m1, output: m1, position_mm: [34.65, 34.65, -6.0], spin: ccw }
+  - { id: m2, output: m2, position_mm: [-34.65, 34.65, -6.0], spin: cw }
+  - { id: m3, output: m3, position_mm: [-34.65, -34.65, -6.0], spin: ccw }
+  - { id: m4, output: m4, position_mm: [34.65, -34.65, -6.0], spin: cw }
+components:
+  - { id: battery, ref: battery, position_mm: [-6.0, 0.0, -14.0], size_mm: [52, 31, 12] }
+  - { id: fc, ref: board, position_mm: [0.0, 0.0, -4.0], size_mm: [25.5, 25.5, 4] }
+  - { id: frame, ref: frame, position_mm: [0.0, 0.0, 0.0], size_mm: [118, 118, 22] }
+  - { id: receiver, mass_g: 1.2, position_mm: [-24.0, 0.0, -2.0], size_mm: [12, 10, 3] }
+  - { id: camera_vtx, mass_g: 12.0, position_mm: [20.0, 0.0, -2.0], size_mm: [14, 14, 18] }
+  - { id: wiring, mass_g: 5.0, position_mm: [0.0, 0.0, -2.0], size_mm: [40, 40, 4] }
+  - { id: fasteners, mass_g: 3.0, position_mm: [0.0, 0.0, 2.0], size_mm: [60, 60, 2] }
+landing_points_mm:
+  - [34.65, 34.65, 9.0]
+  - [-34.65, 34.65, 9.0]
+  - [-34.65, -34.65, 9.0]
+  - [34.65, -34.65, 9.0]
+aerodynamics:
+  drag_area_m2: [0.0035, 0.0035, 0.0090]
+  drag_coefficient: 1.1
+vibration:
+  rotor_imbalance_accel_mps2: 1.2
+  rotor_imbalance_gyro_dps: 0.6
+  broadband_accel_mps2: 0.35
+  broadband_gyro_dps: 0.15
+limits:
+  max_tilt_deg: 35
+  max_rate_dps: [600, 600, 300]
+  max_climb_mps: 1.5
+  battery_warning_cell_v: 3.50
+  battery_critical_cell_v: 3.35
+loop_rates:
+  physics_hz: 2000
+  control_hz: 1000
+  telemetry_hz: 60
+visual:
+  procedural: true
+  colors: { frame: "#1d232e", ducts: "#2b3442", accent: "#22d3ee" }

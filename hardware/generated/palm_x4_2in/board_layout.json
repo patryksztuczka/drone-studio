@@ -1,0 +1,720 @@
+{
+  "airframe": {
+    "center_of_mass_m": [
+      0.000118491921,
+      0.0,
+      -0.00501615799
+    ],
+    "colors": {
+      "accent": "#22d3ee",
+      "ducts": "#2b3442",
+      "frame": "#1d232e"
+    },
+    "components": [
+      {
+        "id": "battery",
+        "mass_g": 33.0,
+        "position_m": [
+          -0.00611849192,
+          0.0,
+          -0.00898384201
+        ],
+        "size_m": [
+          0.052,
+          0.031,
+          0.012
+        ]
+      },
+      {
+        "id": "fc",
+        "mass_g": 5.2,
+        "position_m": [
+          -0.000118491921,
+          0.0,
+          0.00101615799
+        ],
+        "size_m": [
+          0.0255,
+          0.0255,
+          0.004
+        ]
+      },
+      {
+        "id": "frame",
+        "mass_g": 34.0,
+        "position_m": [
+          -0.000118491921,
+          0.0,
+          0.00501615799
+        ],
+        "size_m": [
+          0.118,
+          0.118,
+          0.022
+        ]
+      },
+      {
+        "id": "receiver",
+        "mass_g": 1.2,
+        "position_m": [
+          -0.0241184919,
+          0.0,
+          0.00301615799
+        ],
+        "size_m": [
+          0.012,
+          0.01,
+          0.003
+        ]
+      },
+      {
+        "id": "camera_vtx",
+        "mass_g": 12.0,
+        "position_m": [
+          0.0198815081,
+          0.0,
+          0.00301615799
+        ],
+        "size_m": [
+          0.014,
+          0.014,
+          0.018
+        ]
+      },
+      {
+        "id": "wiring",
+        "mass_g": 5.0,
+        "position_m": [
+          -0.000118491921,
+          0.0,
+          0.00301615799
+        ],
+        "size_m": [
+          0.04,
+          0.04,
+          0.004
+        ]
+      },
+      {
+        "id": "fasteners",
+        "mass_g": 3.0,
+        "position_m": [
+          -0.000118491921,
+          0.0,
+          0.00701615799
+        ],
+        "size_m": [
+          0.06,
+          0.06,
+          0.002
+        ]
+      },
+      {
+        "id": "motor_m1",
+        "mass_g": 3.9,
+        "position_m": [
+          0.0345315081,
+          0.03465,
+          0.00301615799
+        ],
+        "size_m": [
+          0.0156,
+          0.0156,
+          0.01
+        ]
+      },
+      {
+        "id": "prop_m1",
+        "mass_g": 0.6,
+        "position_m": [
+          0.0345315081,
+          0.03465,
+          -0.00098384201
+        ],
+        "size_m": [
+          0.029325,
+          0.029325,
+          0.004
+        ]
+      },
+      {
+        "id": "motor_m2",
+        "mass_g": 3.9,
+        "position_m": [
+          -0.0347684919,
+          0.03465,
+          0.00301615799
+        ],
+        "size_m": [
+          0.0156,
+          0.0156,
+          0.01
+        ]
+      },
+      {
+        "id": "prop_m2",
+        "mass_g": 0.6,
+        "position_m": [
+          -0.0347684919,
+          0.03465,
+          -0.00098384201
+        ],
+        "size_m": [
+          0.029325,
+          0.029325,
+          0.004
+        ]
+      },
+      {
+        "id": "motor_m3",
+        "mass_g": 3.9,
+        "position_m": [
+          -0.0347684919,
+          -0.03465,
+          0.00301615799
+        ],
+        "size_m": [
+          0.0156,
+          0.0156,
+          0.01
+        ]
+      },
+      {
+        "id": "prop_m3",
+        "mass_g": 0.6,
+        "position_m": [
+          -0.0347684919,
+          -0.03465,
+          -0.00098384201
+        ],
+        "size_m": [
+          0.029325,
+          0.029325,
+          0.004
+        ]
+      },
+      {
+        "id": "motor_m4",
+        "mass_g": 3.9,
+        "position_m": [
+          0.0345315081,
+          -0.03465,
+          0.00301615799
+        ],
+        "size_m": [
+          0.0156,
+          0.0156,
+          0.01
+        ]
+      },
+      {
+        "id": "prop_m4",
+        "mass_g": 0.6,
+        "position_m": [
+          0.0345315081,
+          -0.03465,
+          -0.00098384201
+        ],
+        "size_m": [
+          0.029325,
+          0.029325,
+          0.004
+        ]
+      }
+    ],
+    "components_selected": {
+      "battery": "2s_550mah_lihv",
+      "frame": "palm_95_ducted",
+      "motor": "1202_5_8000kv",
+      "prop": "gemfan_2023_3blade"
+    },
+    "description": "Palm-sized 2-inch quadcopter, printed ducted frame, 2S LiHV, STM32H743 AIO.",
+    "frame_size_m": [
+      0.118,
+      0.118,
+      0.022
+    ],
+    "hotspots": [
+      {
+        "id": "fc",
+        "kind": "board",
+        "label": "Flight controller",
+        "position_m": [
+          -0.000118491921,
+          0.0,
+          0.00101615799
+        ]
+      },
+      {
+        "id": "imu0",
+        "kind": "imu",
+        "label": "TDK InvenSense ICM-42688-P",
+        "position_m": [
+          0.00138150808,
+          -0.002,
+          0.00041615799
+        ]
+      },
+      {
+        "id": "baro0",
+        "kind": "barometer",
+        "label": "Bosch BMP390",
+        "position_m": [
+          -0.00611849192,
+          0.007,
+          0.00041615799
+        ]
+      },
+      {
+        "id": "battery",
+        "kind": "battery",
+        "label": "2S 550 mAh LiHV",
+        "position_m": [
+          -0.00611849192,
+          0.0,
+          -0.00898384201
+        ]
+      },
+      {
+        "id": "m1",
+        "kind": "motor",
+        "label": "Motor M1",
+        "position_m": [
+          0.0345315081,
+          0.03465,
+          -0.00098384201
+        ]
+      },
+      {
+        "id": "m2",
+        "kind": "motor",
+        "label": "Motor M2",
+        "position_m": [
+          -0.0347684919,
+          0.03465,
+          -0.00098384201
+        ]
+      },
+      {
+        "id": "m3",
+        "kind": "motor",
+        "label": "Motor M3",
+        "position_m": [
+          -0.0347684919,
+          -0.03465,
+          -0.00098384201
+        ]
+      },
+      {
+        "id": "m4",
+        "kind": "motor",
+        "label": "Motor M4",
+        "position_m": [
+          0.0345315081,
+          -0.03465,
+          -0.00098384201
+        ]
+      }
+    ],
+    "id": "palm_x4_2in",
+    "mass_g": 111.4,
+    "name": "Palm X4 2\"",
+    "prop_diameter_m": 0.051,
+    "rotors": [
+      {
+        "id": "m1",
+        "output": {
+          "channel": 3,
+          "pin": "PB0",
+          "timer": "tim3"
+        },
+        "position_m": [
+          0.0345315081,
+          0.03465,
+          -0.000983842011
+        ],
+        "spin": "ccw"
+      },
+      {
+        "id": "m2",
+        "output": {
+          "channel": 4,
+          "pin": "PB1",
+          "timer": "tim3"
+        },
+        "position_m": [
+          -0.0347684919,
+          0.03465,
+          -0.000983842011
+        ],
+        "spin": "cw"
+      },
+      {
+        "id": "m3",
+        "output": {
+          "channel": 1,
+          "pin": "PA0",
+          "timer": "tim5"
+        },
+        "position_m": [
+          -0.0347684919,
+          -0.03465,
+          -0.000983842011
+        ],
+        "spin": "ccw"
+      },
+      {
+        "id": "m4",
+        "output": {
+          "channel": 2,
+          "pin": "PA1",
+          "timer": "tim5"
+        },
+        "position_m": [
+          0.0345315081,
+          -0.03465,
+          -0.000983842011
+        ],
+        "spin": "cw"
+      }
+    ],
+    "wheelbase_mm": 98.0
+  },
+  "board": {
+    "analog": {
+      "adc_bits": 16,
+      "adc_reference_v": 3.3,
+      "current": {
+        "adc": "adc1",
+        "channel": 11,
+        "offset_mv": 0.0,
+        "pin": "PC1",
+        "scale_mv_per_a": 40.0
+      },
+      "vbat": {
+        "adc": "adc1",
+        "channel": 10,
+        "divider_ratio": 11.0,
+        "pin": "PC0"
+      }
+    },
+    "buses": [
+      {
+        "devices": [
+          "imu0"
+        ],
+        "frequency_hz": 24000000,
+        "id": "spi1",
+        "kind": "spi",
+        "peripheral": "spi1",
+        "pins": [
+          {
+            "pin": "PA6",
+            "role": "miso"
+          },
+          {
+            "pin": "PD7",
+            "role": "mosi"
+          },
+          {
+            "pin": "PA5",
+            "role": "sck"
+          }
+        ]
+      },
+      {
+        "devices": [
+          "baro0"
+        ],
+        "frequency_hz": 400000,
+        "id": "i2c2",
+        "kind": "i2c",
+        "peripheral": "i2c2",
+        "pins": [
+          {
+            "pin": "PB10",
+            "role": "scl"
+          },
+          {
+            "pin": "PB11",
+            "role": "sda"
+          }
+        ]
+      },
+      {
+        "devices": [],
+        "frequency_hz": 420000,
+        "id": "serial_rx",
+        "kind": "uart",
+        "peripheral": "usart1",
+        "pins": [
+          {
+            "pin": "PA10",
+            "role": "rx"
+          },
+          {
+            "pin": "PA9",
+            "role": "tx"
+          }
+        ]
+      },
+      {
+        "devices": [],
+        "frequency_hz": 921600,
+        "id": "telemetry",
+        "kind": "uart",
+        "peripheral": "usart2",
+        "pins": [
+          {
+            "pin": "PD6",
+            "role": "rx"
+          },
+          {
+            "pin": "PD5",
+            "role": "tx"
+          }
+        ]
+      }
+    ],
+    "devices": [
+      {
+        "address": null,
+        "bus": "spi1",
+        "chip_select": "PC15",
+        "component": "icm42688p",
+        "id": "imu0",
+        "identity": {
+          "register": 117,
+          "value": 71
+        },
+        "interrupt": "PB2",
+        "name": "TDK InvenSense ICM-42688-P",
+        "orientation": "cw90",
+        "position_mm": [
+          1.5,
+          -2.0
+        ],
+        "size_mm": [
+          3.0,
+          2.5
+        ],
+        "type": "imu"
+      },
+      {
+        "address": 118,
+        "bus": "i2c2",
+        "chip_select": null,
+        "component": "bmp390",
+        "id": "baro0",
+        "identity": {
+          "register": 0,
+          "value": 96
+        },
+        "interrupt": null,
+        "name": "Bosch BMP390",
+        "orientation": null,
+        "position_mm": [
+          -6.0,
+          7.0
+        ],
+        "size_mm": [
+          2.0,
+          2.0
+        ],
+        "type": "barometer"
+      }
+    ],
+    "id": "ref_h743_aio",
+    "leds": [
+      {
+        "active_high": true,
+        "id": "status",
+        "pin": "PE3"
+      }
+    ],
+    "mcu": {
+      "clock_hz": 480000000,
+      "core": "cortex-m7",
+      "id": "stm32h743vi",
+      "name": "STM32H743VIT6",
+      "position_mm": [
+        0.0,
+        0.0
+      ],
+      "size_mm": [
+        14.0,
+        14.0
+      ]
+    },
+    "motor_outputs": [
+      {
+        "channel": 3,
+        "id": "m1",
+        "pin": "PB0",
+        "timer": "tim3"
+      },
+      {
+        "channel": 4,
+        "id": "m2",
+        "pin": "PB1",
+        "timer": "tim3"
+      },
+      {
+        "channel": 1,
+        "id": "m3",
+        "pin": "PA0",
+        "timer": "tim5"
+      },
+      {
+        "channel": 2,
+        "id": "m4",
+        "pin": "PA1",
+        "timer": "tim5"
+      }
+    ],
+    "mounting_holes_mm": [
+      [
+        -10.0,
+        -10.0
+      ],
+      [
+        10.0,
+        -10.0
+      ],
+      [
+        10.0,
+        10.0
+      ],
+      [
+        -10.0,
+        10.0
+      ]
+    ],
+    "name": "Reference STM32H743 AIO 25.5 x 25.5",
+    "pads": [
+      {
+        "id": "m1",
+        "kind": "motor",
+        "label": "M1",
+        "net": "PB0",
+        "x_mm": 10.5,
+        "y_mm": 10.5
+      },
+      {
+        "id": "m2",
+        "kind": "motor",
+        "label": "M2",
+        "net": "PB1",
+        "x_mm": -10.5,
+        "y_mm": 10.5
+      },
+      {
+        "id": "m3",
+        "kind": "motor",
+        "label": "M3",
+        "net": "PA0",
+        "x_mm": -10.5,
+        "y_mm": -10.5
+      },
+      {
+        "id": "m4",
+        "kind": "motor",
+        "label": "M4",
+        "net": "PA1",
+        "x_mm": 10.5,
+        "y_mm": -10.5
+      },
+      {
+        "id": "bat_p",
+        "kind": "power",
+        "label": "BAT+",
+        "net": "VBAT",
+        "x_mm": -2.5,
+        "y_mm": -11.5
+      },
+      {
+        "id": "bat_n",
+        "kind": "power",
+        "label": "GND",
+        "net": "GND",
+        "x_mm": 2.5,
+        "y_mm": -11.5
+      },
+      {
+        "id": "rx_tx",
+        "kind": "uart",
+        "label": "TX1",
+        "net": "PA9",
+        "x_mm": 11.5,
+        "y_mm": -3.0
+      },
+      {
+        "id": "rx_rx",
+        "kind": "uart",
+        "label": "RX1",
+        "net": "PA10",
+        "x_mm": 11.5,
+        "y_mm": -1.0
+      },
+      {
+        "id": "tel_tx",
+        "kind": "uart",
+        "label": "TX2",
+        "net": "PD5",
+        "x_mm": 11.5,
+        "y_mm": 1.0
+      },
+      {
+        "id": "tel_rx",
+        "kind": "uart",
+        "label": "RX2",
+        "net": "PD6",
+        "x_mm": 11.5,
+        "y_mm": 3.0
+      },
+      {
+        "id": "v5",
+        "kind": "power",
+        "label": "5V",
+        "net": "V5",
+        "x_mm": -11.5,
+        "y_mm": -1.0
+      },
+      {
+        "id": "gnd2",
+        "kind": "power",
+        "label": "GND",
+        "net": "GND",
+        "x_mm": -11.5,
+        "y_mm": 1.0
+      },
+      {
+        "id": "usb",
+        "kind": "usb",
+        "label": "USB",
+        "net": "USB_OTG_FS",
+        "x_mm": 0.0,
+        "y_mm": 11.8
+      }
+    ],
+    "size_mm": [
+      25.5,
+      25.5
+    ],
+    "thickness_mm": 1.2
+  },
+  "format_version": 1,
+  "generated": "@generated by `drone codegen`; edit hardware/ and regenerate",
+  "performance": {
+    "hover_current_a": 6.11761092,
+    "hover_omega_rad_s": 2550.52396,
+    "hover_thrust_fraction": 0.243355977,
+    "hover_thrust_per_rotor_n": 0.273115203,
+    "hover_time_min": 4.31541011,
+    "max_omega_rad_s": 5170.21257,
+    "max_thrust_per_rotor_n": 1.12228681,
+    "thrust_to_weight": 4.10920665,
+    "weight_n": 1.09246081
+  },
+  "source_hash": "70c7764766390c0a"
+}

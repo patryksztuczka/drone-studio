@@ -1,0 +1,11 @@
+kind: motor
+id: 1103_10000kv
+name: 1103 10000KV brushless
+stator_mm: [11.0, 3.0]
+kv_rpm_per_v: 10000
+mass_g: 3.4
+winding_resistance_ohm: 0.38
+no_load_current_a: 0.35
+max_current_a: 6.0
+time_constant_s: 0.022
+shaft_mm: 1.5

@@ -1,0 +1,26 @@
+kind: battery
+id: 2s_550mah_lihv
+name: 2S 550 mAh LiHV
+chemistry: lihv
+cells: 2
+capacity_mah: 550
+mass_g: 33
+max_discharge_c: 75
+cell_voltage:
+  full: 4.35
+  nominal: 3.85
+  empty: 3.30
+ocv_curve:
+  - [0.00, 3.30]
+  - [0.05, 3.55]
+  - [0.10, 3.65]
+  - [0.20, 3.72]
+  - [0.40, 3.80]
+  - [0.60, 3.92]
+  - [0.80, 4.10]
+  - [0.90, 4.22]
+  - [1.00, 4.35]
+thevenin:
+  r0_ohm: 0.045
+  r1_ohm: 0.020
+  c1_f: 600

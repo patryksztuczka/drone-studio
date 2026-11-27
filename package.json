@@ -12,7 +12,7 @@
     "typecheck": "effect-tsgo tsc -b",
     "test": "vp run -r test",
     "build": "vp run -r build",
-    "verify": "vp check && pnpm env:check && pnpm check:deps && pnpm check:suppressions && pnpm check:doc-pins && pnpm check:knip && pnpm typecheck && pnpm test && pnpm check:rust && pnpm build",
+    "verify": "vp check && pnpm env:check && pnpm check:deps && pnpm check:suppressions && pnpm check:doc-pins && pnpm check:knip && pnpm typecheck && pnpm test && pnpm check:rust && pnpm check:hardware && pnpm build",
     "env:check": "varlock load",
     "dev:stop": "node scripts/dev.mjs stop",
     "check:changed": "node scripts/check-changed.mjs",
@@ -23,6 +23,7 @@
     "dev:status": "node scripts/dev.mjs status",
     "browser": "agent-browser",
     "pr-evidence": "node .agents/skills/file-pr/scripts/pr-evidence.mjs",
+    "check:hardware": "cargo run -q -p drone-cli -- validate && cargo run -q -p drone-cli -- codegen --check",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace"
   },
   "devDependencies": {

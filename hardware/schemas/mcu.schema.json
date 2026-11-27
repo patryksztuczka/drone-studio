@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-studio.local/schemas/mcu.schema.json",
+  "title": "Microcontroller",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "name",
+    "vendor",
+    "core",
+    "fpu",
+    "clock_hz",
+    "flash_kb",
+    "ram_kb",
+    "rust_target",
+    "embassy_chip",
+    "renode",
+    "peripherals"
+  ],
+  "properties": {
+    "kind": { "const": "mcu" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "vendor": { "type": "string" },
+    "core": { "enum": ["cortex-m4", "cortex-m7", "cortex-m33"] },
+    "fpu": { "enum": ["fpv4-sp-d16", "fpv5-sp-d16", "fpv5-d16"] },
+    "clock_hz": { "type": "integer", "minimum": 1000000, "maximum": 1000000000 },
+    "flash_kb": { "type": "integer", "minimum": 16 },
+    "ram_kb": { "type": "integer", "minimum": 4 },
+    "rust_target": { "enum": ["thumbv7em-none-eabihf", "thumbv8m.main-none-eabihf"] },
+    "embassy_chip": { "type": "string" },
+    "renode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform"],
+      "properties": { "platform": { "type": "string", "pattern": "\\.repl$" } }
+    },
+    "peripherals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spi", "i2c", "uart", "timers", "adc"],
+      "properties": {
+        "spi": { "$ref": "#/$defs/names" },
+        "i2c": { "$ref": "#/$defs/names" },
+        "uart": { "$ref": "#/$defs/names" },
+        "timers": { "$ref": "#/$defs/names" },
+        "adc": { "$ref": "#/$defs/names" },
+        "usb": { "$ref": "#/$defs/names" }
+      }
+    }
+  },
+  "$defs": {
+    "names": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/id" },
+      "uniqueItems": true
+    }
+  }
+}
