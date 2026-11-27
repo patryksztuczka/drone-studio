@@ -13,10 +13,10 @@ fn reference_hardware_is_valid() {
     assert!(!diags.has_errors());
     assert!(repo.airframes.contains_key("palm_x4_2in"));
     assert_eq!(repo.scenarios.len(), 5);
-    let r = drone_schema::resolve::resolve(&repo, "palm_x4_2in").unwrap();
+    let r = drone_schema::resolve::resolve(&repo, "palm_x4_2in").expect("test fixture");
     eprintln!(
         "{}",
-        serde_json::to_string_pretty(&r.model.derived).unwrap()
+        serde_json::to_string_pretty(&r.model.derived).expect("test fixture")
     );
     eprintln!(
         "mass {} com {:?} inertia {:?}",

@@ -349,5 +349,11 @@ pub fn index(modules: &[String]) -> String {
     for m in modules {
         let _ = writeln!(out, "pub mod {m};");
     }
+    let refs: Vec<String> = modules.iter().map(|m| format!("&{m}::AIRFRAME")).collect();
+    let _ = writeln!(
+        out,
+        "\npub const ALL: &[&crate::AirframeConstants] = &[{}];",
+        refs.join(", ")
+    );
     out
 }

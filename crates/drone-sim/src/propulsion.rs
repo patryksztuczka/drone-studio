@@ -3,11 +3,13 @@ use crate::model::{MotorModel, PropModel};
 const FOUR_PI_SQ: f64 = 4.0 * core::f64::consts::PI * core::f64::consts::PI;
 
 pub fn thrust_constant(prop: &PropModel, density: f64) -> f64 {
-    prop.thrust_coefficient * density * libm::pow(prop.diameter_m, 4.0) / FOUR_PI_SQ
+    let d2 = prop.diameter_m * prop.diameter_m;
+    prop.thrust_coefficient * density * d2 * d2 / FOUR_PI_SQ
 }
 
 pub fn torque_constant(prop: &PropModel, density: f64) -> f64 {
-    prop.torque_coefficient * density * libm::pow(prop.diameter_m, 5.0) / FOUR_PI_SQ
+    let d2 = prop.diameter_m * prop.diameter_m;
+    prop.torque_coefficient * density * d2 * d2 * prop.diameter_m / FOUR_PI_SQ
 }
 
 pub fn steady_state_omega(motor: &MotorModel, k_torque: f64, applied_voltage: f64) -> f64 {
@@ -50,14 +52,17 @@ pub fn advance_rotor(
     k_torque: f64,
     command: f64,
     bus_voltage: f64,
+    alpha: f64,
     dt: f64,
 ) {
     let cmd = command.clamp(0.0, 1.0);
     let target = steady_state_omega(motor, k_torque, cmd * bus_voltage);
-    let alpha = 1.0 - libm::exp(-dt / motor.time_constant_s);
     rotor.omega += (target - rotor.omega) * alpha;
     rotor.omega = rotor.omega.max(0.0);
-    rotor.phase = libm::fmod(rotor.phase + rotor.omega * dt, 2.0 * core::f64::consts::PI);
+    rotor.phase += rotor.omega * dt;
+    if rotor.phase > 2.0 * core::f64::consts::PI {
+        rotor.phase -= 2.0 * core::f64::consts::PI;
+    }
     let back_emf = rotor.omega / motor.kv_rad_per_s_per_v;
     let electrical = (cmd * bus_voltage - back_emf) / motor.resistance_ohm;
     let floor = if rotor.omega > 0.0 {
@@ -65,7 +70,7 @@ pub fn advance_rotor(
     } else {
         0.0
     };
-    rotor.current_a = electrical.clamp(floor, motor.max_current_a * 1.6);
+    rotor.current_a = electrical.clamp(floor, motor.max_current_a * 1.3);
     rotor.command = cmd;
 }
 
@@ -123,8 +128,9 @@ mod tests {
         let target = steady_state_omega(&m, kq, 8.0);
         let dt = 0.0005;
         let steps = (m.time_constant_s / dt).round() as usize;
+        let alpha = 1.0 - (-dt / m.time_constant_s).exp();
         for _ in 0..steps {
-            advance_rotor(&mut r, &m, kq, 1.0, 8.0, dt);
+            advance_rotor(&mut r, &m, kq, 1.0, 8.0, alpha, dt);
         }
         let frac = r.omega / target;
         assert!((frac - 0.632).abs() < 0.01, "{frac}");

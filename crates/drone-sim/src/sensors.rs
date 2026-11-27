@@ -184,7 +184,7 @@ pub struct BaroSim {
     model: BaroModel,
     period_s: f64,
     next_sample_s: f64,
-    delay: VecDeque<(f64, f64)>,
+    delay: VecDeque<f64>,
     delay_steps: usize,
     rng: Rng,
     pub sample: BaroSample,
@@ -204,8 +204,13 @@ impl BaroSim {
         }
     }
 
-    pub fn step(&mut self, t: f64, pressure_pa: f64, temperature_c: f64) -> bool {
-        self.delay.push_back((pressure_pa, temperature_c));
+    pub fn step(
+        &mut self,
+        t: f64,
+        altitude_m: f64,
+        atmosphere: &crate::atmosphere::Atmosphere,
+    ) -> bool {
+        self.delay.push_back(altitude_m);
         while self.delay.len() > self.delay_steps + 1 {
             self.delay.pop_front();
         }
@@ -213,11 +218,8 @@ impl BaroSim {
             return false;
         }
         self.next_sample_s += self.period_s;
-        let (p, temp) = self
-            .delay
-            .front()
-            .copied()
-            .unwrap_or((pressure_pa, temperature_c));
+        let air = atmosphere.at(self.delay.front().copied().unwrap_or(altitude_m));
+        let (p, temp) = (air.pressure_pa, air.temperature_k - 273.15);
         self.sample = BaroSample {
             seq: self.sample.seq.wrapping_add(1),
             pressure_pa: p + self.rng.gaussian() * self.model.pressure_noise_pa,
@@ -231,6 +233,8 @@ impl BaroSim {
 pub struct AdcSim {
     model: AdcModel,
     rng: Rng,
+    period_s: f64,
+    next_sample_s: f64,
     pub sample: AdcSample,
 }
 
@@ -239,6 +243,8 @@ impl AdcSim {
         Self {
             model: model.clone(),
             rng,
+            period_s: 0.001,
+            next_sample_s: 0.0,
             sample: AdcSample::default(),
         }
     }
@@ -250,7 +256,11 @@ impl AdcSim {
         c.clamp(0.0, full) as u16
     }
 
-    pub fn step(&mut self, battery_v: f64, current_a: f64) {
+    pub fn step(&mut self, t: f64, battery_v: f64, current_a: f64) {
+        if t + 1e-12 < self.next_sample_s {
+            return;
+        }
+        self.next_sample_s += self.period_s;
         let vbat = battery_v / self.model.vbat_divider_ratio;
         let cur = current_a * self.model.current_scale_v_per_a + self.model.current_offset_v;
         self.sample = AdcSample {

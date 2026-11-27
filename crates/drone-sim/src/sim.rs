@@ -109,6 +109,10 @@ pub struct Simulator {
     adc: AdcSim,
     last_derivative: Derivative,
     imu_position: Vec3,
+    k_thrust: f64,
+    k_torque: f64,
+    rotor_alpha: f64,
+    air_altitude_m: f64,
 }
 
 fn rotor_array(model: &AirframeModel) -> ([Vec3; 4], [f64; 4]) {
@@ -171,7 +175,12 @@ impl Simulator {
             adc: AdcSim::new(&model.adc, rng.fork(4)),
             last_derivative: Derivative::default(),
             imu_position: Vec3::from_array(model.imu.position_m),
+            k_thrust: 0.0,
+            k_torque: 0.0,
+            rotor_alpha: 1.0 - libm::exp(-dt / model.motor.time_constant_s),
+            air_altitude_m: config.site_altitude_m,
         };
+        sim.update_air();
         sim.settle_on_ground();
         sim
     }
@@ -226,10 +235,21 @@ impl Simulator {
         -(s.position + s.attitude.rotate(self.rotor_positions[i])).z
     }
 
+    fn update_air(&mut self) {
+        let altitude = self.site_altitude_m - self.state.position.z;
+        if self.k_thrust > 0.0 && (altitude - self.air_altitude_m).abs() < 0.05 {
+            return;
+        }
+        self.air_altitude_m = altitude;
+        self.air = self.atmosphere.at(altitude);
+        self.k_thrust = thrust_constant(&self.model.prop, self.air.density_kg_m3);
+        self.k_torque = torque_constant(&self.model.prop, self.air.density_kg_m3);
+    }
+
     fn derivative(&self, s: &RigidState) -> Derivative {
         let q = s.attitude;
-        let kt = thrust_constant(&self.model.prop, self.air.density_kg_m3);
-        let kq = torque_constant(&self.model.prop, self.air.density_kg_m3);
+        let kt = self.k_thrust;
+        let kq = self.k_torque;
         let radius = self.model.prop.diameter_m * 0.5;
         let air_rel_world = s.velocity - self.wind_now;
         let air_rel_body = q.inverse_rotate(air_rel_world);
@@ -305,16 +325,24 @@ impl Simulator {
     pub fn step(&mut self, motor_command: [f64; 4]) {
         let dt = self.dt;
         let t = self.time_s();
-        let altitude = self.site_altitude_m - self.state.position.z;
-        self.air = self.atmosphere.at(altitude);
+        self.update_air();
         let airspeed = (self.state.velocity - self.wind_now).norm();
         self.wind_now = self.wind.step(t, airspeed, dt);
 
-        let kq = torque_constant(&self.model.prop, self.air.density_kg_m3);
+        let kq = self.k_torque;
         let bus = self.battery.voltage_v;
+        let alpha = self.rotor_alpha;
         let mut load = self.model.battery.avionics_current_a;
         for (i, rotor) in self.rotors.iter_mut().enumerate() {
-            advance_rotor(rotor, &self.model.motor, kq, motor_command[i], bus, dt);
+            advance_rotor(
+                rotor,
+                &self.model.motor,
+                kq,
+                motor_command[i],
+                bus,
+                alpha,
+                dt,
+            );
             load += rotor.current_a;
         }
         self.battery.step(load, dt);
@@ -353,7 +381,7 @@ impl Simulator {
                     k4.angular_acceleration,
                 ),
         };
-        let kt = thrust_constant(&self.model.prop, self.air.density_kg_m3);
+        let kt = self.k_thrust;
         let radius = self.model.prop.diameter_m * 0.5;
         for i in 0..4 {
             let w = self.rotors[i].omega;
@@ -362,7 +390,7 @@ impl Simulator {
             self.rotors[i].torque_nm = kq * w * w * self.thrust_scale[i];
         }
         self.step_count += 1;
-        self.last_derivative = self.derivative(&self.state);
+        self.last_derivative = k4;
         self.sample_sensors();
     }
 
@@ -391,13 +419,13 @@ impl Simulator {
         let baro_offset = s
             .attitude
             .rotate(Vec3::from_array(self.model.baro.position_m));
-        let baro_air = self
-            .atmosphere
-            .at(self.site_altitude_m - (s.position + baro_offset).z);
-        self.baro
-            .step(t, baro_air.pressure_pa, baro_air.temperature_k - 273.15);
+        self.baro.step(
+            t,
+            self.site_altitude_m - (s.position + baro_offset).z,
+            &self.atmosphere,
+        );
         self.adc
-            .step(self.battery.voltage_v, self.battery.current_a);
+            .step(t, self.battery.voltage_v, self.battery.current_a);
     }
 
     pub fn sensors(&self) -> SensorFrame {
@@ -441,6 +469,20 @@ impl Simulator {
             on_ground: self.last_derivative.contact_force > 1e-6,
             height_agl_m: -lowest,
         }
+    }
+
+    pub fn contact(&self) -> (bool, f64) {
+        let s = self.state;
+        let lowest = self
+            .landing_points
+            .iter()
+            .map(|p| (s.position + s.attitude.rotate(*p)).z)
+            .fold(f64::NEG_INFINITY, f64::max);
+        (self.last_derivative.contact_force > 1e-6, -lowest)
+    }
+
+    pub fn velocity(&self) -> Vec3 {
+        self.state.velocity
     }
 
     pub fn kinetic_energy(&self) -> f64 {

@@ -53,12 +53,16 @@ impl Rng {
         if let Some(v) = self.spare.take() {
             return v;
         }
-        let u1 = self.uniform().max(1e-300);
-        let u2 = self.uniform();
-        let r = libm::sqrt(-2.0 * libm::log(u1));
-        let theta = 2.0 * core::f64::consts::PI * u2;
-        self.spare = Some(r * libm::sin(theta));
-        r * libm::cos(theta)
+        loop {
+            let u = 2.0 * self.uniform() - 1.0;
+            let v = 2.0 * self.uniform() - 1.0;
+            let s = u * u + v * v;
+            if s > 0.0 && s < 1.0 {
+                let f = libm::sqrt(-2.0 * libm::log(s) / s);
+                self.spare = Some(v * f);
+                return u * f;
+            }
+        }
     }
 }
 

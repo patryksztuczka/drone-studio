@@ -1,15 +1,15 @@
-use crc::{CRC_16_IBM_3740, CRC_32_ISO_HDLC, Crc};
+use crc::{CRC_16_IBM_3740, CRC_32_ISO_HDLC, Crc, Table};
 use postcard::experimental::max_size::MaxSize;
 
 use crate::PROTOCOL_VERSION;
 use crate::cobs;
 use crate::messages::{Message, MessageKind};
 
-const CRC16: Crc<u16> = Crc::<u16>::new(&CRC_16_IBM_3740);
-const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
+const CRC16: Crc<u16, Table<16>> = Crc::<u16, Table<16>>::new(&CRC_16_IBM_3740);
+const CRC32: Crc<u32, Table<16>> = Crc::<u32, Table<16>>::new(&CRC_32_ISO_HDLC);
 const HEADER_LEN: usize = 3;
 const FLAG_CRC32: u8 = 1;
-const MAX_RAW: usize = 512;
+const MAX_RAW: usize = 256;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Integrity {

@@ -8,6 +8,8 @@ pub struct Battery {
     pub current_a: f64,
     pub voltage_v: f64,
     pub consumed_mah: f64,
+    decay_dt: f64,
+    decay: f64,
 }
 
 impl Battery {
@@ -19,6 +21,8 @@ impl Battery {
             current_a: 0.0,
             voltage_v: 0.0,
             consumed_mah: 0.0,
+            decay_dt: 0.0,
+            decay: 1.0,
         };
         b.voltage_v = b.open_circuit_voltage();
         b
@@ -36,7 +40,11 @@ impl Battery {
         self.soc = (self.soc - charge_ah / self.model.capacity_ah).max(0.0);
         let tau = self.model.r1_ohm * self.model.c1_f;
         if tau > 0.0 {
-            let a = libm::exp(-dt / tau);
+            if dt != self.decay_dt {
+                self.decay_dt = dt;
+                self.decay = libm::exp(-dt / tau);
+            }
+            let a = self.decay;
             self.polarization_v = self.polarization_v * a + i * self.model.r1_ohm * (1.0 - a);
         }
         self.voltage_v =
