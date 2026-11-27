@@ -14,7 +14,6 @@
     "build": "vp run -r build",
     "verify": "vp check && pnpm env:check && pnpm check:deps && pnpm check:suppressions && pnpm check:doc-pins && pnpm check:knip && pnpm typecheck && pnpm test && pnpm check:rust && pnpm build",
     "env:check": "varlock load",
-    "init:project": "node scripts/init.mjs",
     "dev:stop": "node scripts/dev.mjs stop",
     "check:changed": "node scripts/check-changed.mjs",
     "check:doc-pins": "node scripts/check-doc-pins.mjs",
@@ -22,7 +21,6 @@
     "check:web-boot": "node scripts/web-boot.mjs",
     "sources:fetch": "node scripts/fetch-sources.mjs",
     "dev:status": "node scripts/dev.mjs status",
-    "github:apply": "node scripts/github-apply.mjs",
     "browser": "agent-browser",
     "pr-evidence": "node .agents/skills/file-pr/scripts/pr-evidence.mjs",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace"

@@ -183,8 +183,6 @@ The id is the package's import path without the `@`, then the path below `src`, 
 | `packages/<adapter>/src` | `drone-studio/<adapter>/` | `drone-studio/auth/Auth`                   |
 | `packages/domain/src`    | `drone-studio/domain/`    | `drone-studio/domain/identity/CurrentUser` |
 
-`scripts/init.mjs` renames the `drone-studio` prefix with the project.
-
 ### structure.web: the browser app
 
 ```
