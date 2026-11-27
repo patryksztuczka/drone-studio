@@ -2,7 +2,14 @@ import { LayoutPartId } from "@drone-studio/engine-client";
 import type { LayoutPad } from "@drone-studio/engine-client";
 import { describe, expect, it } from "vite-plus/test";
 
-import { frequencyLabel, highlightFor, padEdge, padFunction, toBoard } from "./board-geometry.ts";
+import {
+  busChips,
+  frequencyLabel,
+  highlightFor,
+  padEdge,
+  padFunction,
+  toBoard,
+} from "./board-geometry.ts";
 import type { BoardParts } from "./board-geometry.ts";
 
 const id = (name: string) => LayoutPartId.make(name);
@@ -59,7 +66,11 @@ const board: BoardParts = {
       size_mm: [3, 2.5],
     },
   ],
-  pads: [motorPad, rxPad, groundPad, pad("gnd2", "power", "GND")],
+  pads: [motorPad, rxPad, groundPad, pad("gnd2", "power", "GND"), pad("bat_p", "power", "VBAT")],
+  analog: {
+    vbat: { adc: "adc1", channel: 10, pin: "PC0" },
+    current: { adc: "adc1", channel: 11, pin: "PC1" },
+  },
 };
 
 describe("board geometry", () => {
@@ -89,5 +100,14 @@ describe("board geometry", () => {
   it("prints bus clocks in the unit a datasheet would use", () => {
     expect(frequencyLabel(24_000_000)).toBe("24 MHz");
     expect(frequencyLabel(400_000)).toBe("400 kHz");
+  });
+
+  it("offers one chip per bus and one for the battery ADC, which lights the pack pad", () => {
+    const chips = busChips(board);
+
+    expect(chips.map((chip) => chip.label)).toEqual(["USART1", "SPI1", "ADC1"]);
+    expect(chips[1]?.detail).toBe("SPI1 24 MHz · SCK PA5");
+    expect(chips[2]?.detail).toBe("ADC1 · VBAT ch10 PC0 · current ch11 PC1");
+    expect([...highlightFor(board, { kind: "analog", id: "adc1" }).pads]).toEqual(["bat_p"]);
   });
 });

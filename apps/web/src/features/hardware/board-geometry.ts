@@ -1,6 +1,9 @@
 import type { BoardLayout, LayoutBus, LayoutPad } from "@drone-studio/engine-client";
 
-export type BoardParts = Pick<BoardLayout["board"], "buses" | "devices" | "pads" | "motor_outputs">;
+export type BoardParts = Pick<
+  BoardLayout["board"],
+  "buses" | "devices" | "pads" | "motor_outputs" | "analog"
+>;
 
 export interface BoardPoint {
   readonly x: number;
@@ -23,7 +26,8 @@ export const padEdge = (forwardMm: number, rightMm: number): Edge => {
 export type Selection =
   | { readonly kind: "pad"; readonly id: string }
   | { readonly kind: "bus"; readonly id: string }
-  | { readonly kind: "device"; readonly id: string };
+  | { readonly kind: "device"; readonly id: string }
+  | { readonly kind: "analog"; readonly id: string };
 
 export interface Highlight {
   readonly pads: ReadonlySet<string>;
@@ -49,6 +53,14 @@ export const highlightFor = (board: BoardParts, selection: Selection | undefined
       buses: new Set([bus.id]),
       devices: new Set(bus.devices),
       pads: new Set(board.pads.filter((pad) => nets.has(pad.net)).map((pad) => pad.id)),
+    };
+  }
+
+  if (selection.kind === "analog") {
+    return {
+      buses: new Set([selection.id]),
+      devices: new Set(),
+      pads: new Set(board.pads.filter((pad) => pad.net === "VBAT").map((pad) => pad.id)),
     };
   }
 
@@ -95,4 +107,36 @@ export const frequencyLabel = (hz: number) => {
   if (hz >= 1000) return `${String(hz / 1000)} kHz`;
 
   return `${String(hz)} Hz`;
+};
+
+export interface BusChip {
+  readonly selection: Selection;
+  readonly label: string;
+  readonly detail: string;
+}
+
+export const busChips = (board: BoardParts): ReadonlyArray<BusChip> => {
+  const buses = board.buses.map((bus): BusChip => ({
+    selection: { kind: "bus", id: bus.id },
+    label: bus.peripheral.toUpperCase(),
+    detail: [
+      `${bus.peripheral.toUpperCase()} ${frequencyLabel(bus.frequency_hz)}`,
+      ...bus.pins.map((pin) => `${pin.role.toUpperCase()} ${pin.pin}`),
+    ].join(" · "),
+  }));
+
+  const analog = board.analog;
+
+  if (analog === undefined) return buses;
+
+  const adc = analog.vbat.adc;
+
+  return [
+    ...buses,
+    {
+      selection: { kind: "analog", id: adc },
+      label: adc.toUpperCase(),
+      detail: `${adc.toUpperCase()} · VBAT ch${String(analog.vbat.channel)} ${analog.vbat.pin} · current ch${String(analog.current.channel)} ${analog.current.pin}`,
+    },
+  ];
 };
