@@ -50,8 +50,9 @@ It optimises for a codebase an agent can extend without making it worse. Every r
 | `pnpm typecheck`                   | TypeScript 7 with Effect diagnostics                                                                                                                                             |
 | `pnpm test`                        | unit tests in every package                                                                                                                                                      |
 | `pnpm check:rust`                  | `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test` over the Rust workspace                                                                                         |
+| `pnpm check:firmware`              | `cargo fmt --check`, `cargo clippy -D warnings` and the release build of the STM32H743 firmware in `firmware/target-stm32h7`                                                     |
 | `pnpm build`                       | builds every package                                                                                                                                                             |
-| `pnpm verify`                      | check, `env:check`, the dependency, pin, knip and suppression checks, typecheck, test, `check:rust` and build: the same steps as CI. The pre-push hook runs it                   |
+| `pnpm verify`                      | check, `env:check`, the dependency, pin, knip and suppression checks, typecheck, test, `check:rust`, `check:firmware` and build: the same steps as CI. The pre-push hook runs it |
 | `pnpm check:deps`                  | fails on a dependency that is not an exact version or an action not pinned by SHA                                                                                                |
 | `pnpm check:doc-pins`              | fails when a document names a version the workspace does not install                                                                                                             |
 | `pnpm check:knip`                  | fails on unused files, exports and dependencies                                                                                                                                  |
@@ -64,14 +65,14 @@ It optimises for a codebase an agent can extend without making it worse. Every r
 
 The `drone` CLI in `crates/drone-cli` provides these as it lands; each prints JSON with `--json`:
 
-| Command                                       | Does                                                                                          |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `cargo run -p drone-cli -- validate --json`   | validates every manifest in `hardware/` against its schema                                    |
-| `cargo run -p drone-cli -- codegen [--check]` | generates the firmware, simulator, Renode and Studio files; `--check` fails when one is stale |
-| `cargo run -p drone-cli -- sim run\|suite`    | flies one scenario, or the regression suite, and records each run in `runs/`                  |
-| `cargo run -p drone-cli -- analyze`           | reports a run's metrics and anomalies                                                         |
-| `cargo run -p drone-cli -- diff`              | compares the metrics of two runs                                                              |
-| `cargo run -p drone-cli -- emu smoke`         | builds the STM32 firmware and boots it in Renode                                              |
+| Command                                       | Does                                                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `cargo run -p drone-cli -- validate --json`   | validates every manifest in `hardware/` against its schema                                             |
+| `cargo run -p drone-cli -- codegen [--check]` | generates the firmware, simulator, Renode and Studio files; `--check` fails when one is stale          |
+| `cargo run -p drone-cli -- sim run\|suite`    | flies one scenario, or the regression suite, and records each run in `runs/`                           |
+| `cargo run -p drone-cli -- analyze`           | reports a run's metrics and anomalies                                                                  |
+| `cargo run -p drone-cli -- diff`              | compares the metrics of two runs                                                                       |
+| `cargo run -p drone-cli -- emu smoke`         | builds the STM32 firmware and boots it in Renode in Docker ([emulation](docs/operations/emulation.md)) |
 
 `pnpm dev` derives its port from a hash of the checkout path, so worktrees run side by side. `node scripts/dev.mjs ports` prints it, `.dev/state.json` holds the running URL and pids, `.dev/logs/` the logs, and `DEV_WEB_PORT` overrides the port.
 
